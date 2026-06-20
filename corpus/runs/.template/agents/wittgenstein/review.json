@@ -1,0 +1,22 @@
+{
+  "_schema": "interpretation-ai-cell/philosopher-review/v1",
+  "run_id": "",
+  "agent": "wittgenstein",
+  "timestamp": "",
+  "reviews": [
+    {
+      "segment_id": "seg_001",
+      "verdict": "",
+      "confidence": 0.0,
+      "critique": {
+        "issues": [],
+        "approved_spans": []
+      },
+      "skills_invoked": [],
+      "tokens": {
+        "prompt": 0,
+        "completion": 0
+      }
+    }
+  ]
+}

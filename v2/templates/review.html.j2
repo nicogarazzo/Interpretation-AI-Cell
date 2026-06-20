@@ -1,0 +1,224 @@
+{# review.html.j2 — Interactive bilingual review for Interpretation AI Cell v2 #}
+{# This template is rendered by review_gen.py with the following context: #}
+{# run_id, date, segment_count, corrections_count, consensus_result, #}
+{# critics (list), corrections (list), notes (list), segments (list) #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Translation Review — run {{ run_id }}</title>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  :root {
+    --purple: #8c4aec; --purple-glow: rgba(140,74,236,0.18); --purple-border: rgba(140,74,236,0.35);
+    --black: #0a0a0a; --dark: #141414; --card: #1c1c1c; --white: #fefefe;
+    --gray: #2e2e2e; --gray-mid: #555; --gray-light: #888; --text: #e8e8e8; --text-dim: #888;
+    --radius: 14px; --radius-sm: 9px;
+    --green: #22c55e; --green-glow: rgba(34,197,94,0.15);
+    --amber: #f59e0b; --amber-glow: rgba(245,158,11,0.15);
+    --red: #ef4444; --red-glow: rgba(239,68,68,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--black); color: var(--text); font-family: -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; min-height: 100vh; padding-bottom: 80px; }
+  #progress-bar { position: sticky; top: 0; z-index: 100; background: var(--dark); border-bottom: 1px solid var(--gray); padding: 10px 24px; display: flex; align-items: center; gap: 16px; }
+  .progress-label { font-size: 12px; color: var(--text-dim); white-space: nowrap; font-weight: 600; }
+  .track { flex: 1; height: 4px; background: var(--gray); border-radius: 99px; overflow: hidden; }
+  .fill { height: 100%; background: var(--purple); border-radius: 99px; transition: width 0.4s; }
+  .counter { font-size: 13px; color: var(--purple); font-weight: 700; white-space: nowrap; }
+  header { background: var(--black); text-align: center; padding: 56px 24px 40px; position: relative; overflow: hidden; }
+  header::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 600px; height: 300px; background: radial-gradient(ellipse, rgba(140,74,236,0.22) 0%, transparent 70%); pointer-events: none; }
+  header::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--purple-border), transparent); }
+  .logo-badge { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: var(--text-dim); text-transform: uppercase; background: var(--card); border: 1px solid var(--gray); padding: 6px 14px; border-radius: 99px; margin-bottom: 20px; }
+  header h1 { font-size: clamp(26px, 4vw, 38px); font-weight: 700; line-height: 1.2; color: var(--white); margin-bottom: 10px; }
+  header h1 em { color: var(--purple); font-style: normal; }
+  .subtitle { font-size: 15px; color: var(--text-dim); max-width: 580px; margin: 0 auto 24px; line-height: 1.6; }
+  .meta-badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  .meta-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text-dim); background: var(--card); border: 1px solid var(--gray); padding: 5px 12px; border-radius: 99px; }
+  .meta-badge i { width: 13px; height: 13px; color: var(--purple); }
+  main { max-width: 1100px; margin: 0 auto; padding: 40px 24px 0; }
+  .section-title { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: var(--text-dim); text-transform: uppercase; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--gray); }
+  .critic-panel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 36px; }
+  @media (max-width: 720px) { .critic-panel { grid-template-columns: 1fr; } }
+  .critic-card { background: var(--card); border: 1.5px solid var(--gray); border-radius: var(--radius); padding: 20px; }
+  .critic-name { font-size: 13px; font-weight: 700; color: var(--purple); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .critic-role { font-size: 11px; color: var(--text-dim); margin-bottom: 14px; }
+  .verdict-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; padding: 3px 10px; border-radius: 99px; text-transform: uppercase; }
+  .verdict-approve { background: var(--green-glow); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+  .verdict-revise { background: var(--amber-glow); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
+  .verdict-block { background: var(--red-glow); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+  .critic-issues { margin-top: 12px; font-size: 12px; color: var(--text-dim); }
+  .corrections-banner { background: var(--green-glow); border: 1.5px solid rgba(34,197,94,0.3); border-radius: var(--radius); padding: 18px 22px; margin-bottom: 36px; display: flex; gap: 14px; align-items: flex-start; }
+  .corrections-banner i { color: var(--green); flex-shrink: 0; margin-top: 2px; }
+  .corrections-banner h3 { font-size: 13px; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .corrections-banner ul { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+  .corrections-banner li { font-size: 13px; color: var(--text-dim); padding-left: 12px; position: relative; }
+  .corrections-banner li::before { content: '\2192'; position: absolute; left: 0; color: var(--green); }
+  .segments { display: flex; flex-direction: column; gap: 10px; }
+  .segment-card { background: var(--card); border: 1.5px solid var(--gray); border-radius: var(--radius); overflow: hidden; }
+  .segment-header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; cursor: pointer; user-select: none; }
+  .seg-number { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; background: var(--gray); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--text-dim); }
+  .segment-card.approved .seg-number { background: var(--green); color: #fff; }
+  .seg-type { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; color: var(--text-dim); text-transform: uppercase; background: var(--gray); padding: 2px 8px; border-radius: 99px; flex-shrink: 0; }
+  .seg-preview { font-size: 13px; color: var(--text-dim); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .seg-chevron { color: var(--text-dim); flex-shrink: 0; transition: transform 0.2s; }
+  .segment-card.open .seg-chevron { transform: rotate(180deg); }
+  .segment-body { display: none; padding: 0 18px 18px; }
+  .segment-card.open .segment-body { display: block; }
+  .bilingual { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  @media (max-width: 640px) { .bilingual { grid-template-columns: 1fr; } }
+  .lang-block { background: var(--black); border: 1px solid var(--gray); border-radius: var(--radius-sm); padding: 14px 16px; }
+  .lang-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .lang-label.en { color: var(--gray-light); }
+  .lang-label.de { color: var(--purple); }
+  .lang-text { font-size: 14px; line-height: 1.6; white-space: pre-line; }
+  .lang-text.en-text { color: var(--gray-light); }
+  .lang-text.de-text { color: var(--white); }
+  .reviewer-section label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: var(--text-dim); text-transform: uppercase; display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .reviewer-input { width: 100%; background: var(--black); border: 1.5px solid var(--gray); color: var(--text); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; resize: vertical; min-height: 60px; font-family: inherit; outline: none; }
+  .reviewer-input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-glow); }
+  .decision-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .decision-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 99px; font-size: 12px; font-weight: 600; border: 1.5px solid; cursor: pointer; font-family: inherit; background: transparent; }
+  .btn-ok { border-color: rgba(34,197,94,0.4); color: var(--green); }
+  .btn-ok:hover, .btn-ok.active { background: var(--green-glow); border-color: var(--green); }
+  .btn-suggest { border-color: rgba(245,158,11,0.4); color: var(--amber); }
+  .btn-suggest:hover, .btn-suggest.active { background: var(--amber-glow); border-color: var(--amber); }
+  .btn-reject { border-color: rgba(239,68,68,0.4); color: var(--red); }
+  .btn-reject:hover, .btn-reject.active { background: var(--red-glow); border-color: var(--red); }
+  .instructions { background: var(--card); border: 1.5px solid var(--purple-border); border-radius: var(--radius-sm); padding: 14px 18px; font-size: 13px; color: var(--text-dim); margin-bottom: 24px; display: flex; gap: 12px; align-items: center; }
+  footer { text-align: center; padding: 48px 24px 24px; font-size: 12px; color: var(--text-dim); border-top: 1px solid var(--gray); margin-top: 60px; }
+  footer strong { color: var(--text); }
+</style>
+</head>
+<body>
+
+<div id="progress-bar">
+  <span class="progress-label"><i data-lucide="check-circle" style="width:12px;height:12px;display:inline;vertical-align:middle;margin-right:4px;"></i> Review</span>
+  <div class="track"><div class="fill" id="progress-fill" style="width:0%"></div></div>
+  <span class="counter" id="progress-counter">0 / {{ segment_count }}</span>
+</div>
+
+<header>
+  <div class="logo-badge"><i data-lucide="globe-2"></i> Interpretation AI Cell v2</div>
+  <h1>Translation Review <em>EN&rarr;DE</em></h1>
+  <p class="subtitle">Run {{ run_id }} &middot; Consensus: {{ consensus_result|upper }}</p>
+  <div class="meta-badges">
+    <span class="meta-badge"><i data-lucide="calendar"></i> {{ date }}</span>
+    <span class="meta-badge"><i data-lucide="layers"></i> {{ segment_count }} segments</span>
+    {% if corrections_count > 0 %}
+    <span class="meta-badge"><i data-lucide="shield-check"></i> {{ corrections_count }} corrections</span>
+    {% endif %}
+  </div>
+</header>
+
+<main>
+  <div class="section-title"><i data-lucide="users"></i> Critic panel</div>
+  <div class="critic-panel">
+    {% for c in critics %}
+    <div class="critic-card">
+      <div class="critic-name">{{ c.name }}</div>
+      <div class="critic-role">{{ c.role }}</div>
+      <span class="verdict-pill verdict-{{ c.verdict }}">
+        <i data-lucide="{% if c.verdict == 'approve' %}check-circle{% elif c.verdict == 'block' %}x-circle{% else %}alert-triangle{% endif %}" style="width:11px;height:11px;"></i>
+        {{ c.verdict|capitalize }}
+      </span>
+      <div class="critic-issues">Issues: <span>{{ c.issues_count }}</span></div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if corrections %}
+  <div class="corrections-banner">
+    <i data-lucide="check-circle-2" style="width:18px;height:18px;margin-top:1px;"></i>
+    <div>
+      <h3>Corrections applied ({{ corrections|length }})</h3>
+      <ul>
+        {% for c in corrections %}
+        <li><strong>{{ c.philosopher }}</strong> ({{ c.severity }}): {{ c.explanation }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="section-title"><i data-lucide="table"></i> Bilingual review table</div>
+  <div class="instructions">
+    <i data-lucide="info" style="width:16px;height:16px;"></i>
+    For each segment: mark <strong style="color:var(--green)">OK</strong>, <strong style="color:var(--amber)">Suggest change</strong> or <strong style="color:var(--red)">Reject</strong>.
+  </div>
+
+  <div class="segments">
+    {% for seg in segments %}
+    {% set num = "%03d"|format(loop.index) %}
+    <div class="segment-card" id="card-{{ num }}">
+      <div class="segment-header" onclick="toggle('{{ num }}')">
+        <div class="seg-number">{{ loop.index }}</div>
+        <span class="seg-type">{{ seg.type|replace('_', ' ')|title }}</span>
+        <span class="seg-preview">{{ seg.source[:60] }}{% if seg.source|length > 60 %}...{% endif %}</span>
+        <i data-lucide="chevron-down" class="seg-chevron" style="width:16px;height:16px;"></i>
+      </div>
+      <div class="segment-body">
+        <div class="bilingual">
+          <div class="lang-block">
+            <div class="lang-label en"><i data-lucide="flag" style="width:11px;height:11px;"></i> EN</div>
+            <div class="lang-text en-text">{{ seg.source }}</div>
+          </div>
+          <div class="lang-block">
+            <div class="lang-label de"><i data-lucide="flag" style="width:11px;height:11px;"></i> DE</div>
+            <div class="lang-text de-text">{{ seg.translation }}</div>
+          </div>
+        </div>
+        <div class="reviewer-section">
+          <label><i data-lucide="edit-3" style="width:12px;height:12px;"></i> Reviewer notes</label>
+          <textarea class="reviewer-input" placeholder="Add your comment here..." data-seg="{{ num }}"></textarea>
+          <div class="decision-row">
+            <button class="decision-btn btn-ok" onclick="setDecision('{{ num }}','ok',this)"><i data-lucide="check" style="width:13px;height:13px;"></i> OK</button>
+            <button class="decision-btn btn-suggest" onclick="setDecision('{{ num }}','suggest',this)"><i data-lucide="edit-2" style="width:13px;height:13px;"></i> Suggest</button>
+            <button class="decision-btn btn-reject" onclick="setDecision('{{ num }}','reject',this)"><i data-lucide="x" style="width:13px;height:13px;"></i> Reject</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</main>
+
+<footer>
+  <strong>Interpretation AI Cell v2</strong> &middot; Claude Code orchestrated &middot; {{ date }}
+</footer>
+
+<script>
+lucide.createIcons();
+const decisions = {};
+const total = {{ segment_count }};
+
+function toggle(id) {
+  document.getElementById('card-' + id).classList.toggle('open');
+}
+
+function setDecision(id, decision, btn) {
+  const card = document.getElementById('card-' + id);
+  const row = btn.parentElement;
+  row.querySelectorAll('.decision-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  decisions[id] = decision;
+
+  if (decision === 'ok') {
+    card.classList.add('approved');
+    card.classList.remove('flagged', 'rejected');
+  } else if (decision === 'suggest') {
+    card.classList.add('flagged');
+    card.classList.remove('approved', 'rejected');
+  } else {
+    card.classList.add('rejected');
+    card.classList.remove('approved', 'flagged');
+  }
+
+  const count = Object.keys(decisions).length;
+  document.getElementById('progress-fill').style.width = (count / total * 100) + '%';
+  document.getElementById('progress-counter').textContent = count + ' / ' + total;
+}
+</script>
+</body>
+</html>

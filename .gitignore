@@ -1,0 +1,54 @@
+# Hermes Agent — isolated runtime directory (per-machine, never committed)
+# This is the project-local HERMES_HOME created by `make bootstrap`
+.hermes/
+
+# Hermes per-machine state inside profile distributions (if any leak)
+**/memories/
+**/sessions/
+**/state.db
+**/logs/
+**/.env
+
+# Claude Code local settings
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.bak
+
+# Client run data — confidential, never commit
+corpus/runs/*/
+# Keep the blank template (no client data)
+!corpus/runs/.template/
+
+# Client-specific skills — contain proprietary glossaries, brand rules, and campaign data
+# Only the example-client template is committed; real client skills stay local
+profiles/translator/skills/*/
+!profiles/translator/skills/example-client/
+
+# Test fixtures with real client content — never commit
+v2/tests/fixtures/segments.json
+v2/tests/fixtures/translation_draft.json
+v2/tests/fixtures/critique_frege.json
+v2/tests/fixtures/critique_wittgenstein.json
+
+# Client validation files
+corpus/runs/*.html
+corpus/runs/*.pdf

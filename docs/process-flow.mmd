@@ -1,0 +1,130 @@
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'background': '#0d0d1a',
+    'mainBkg': '#0d0d1a',
+    'primaryColor': '#6B46C1',
+    'primaryTextColor': '#ffffff',
+    'primaryBorderColor': '#7C3AED',
+    'lineColor': '#7C3AED',
+    'clusterBkg': '#13132b',
+    'clusterBorder': '#3B3B6B',
+    'titleColor': '#C4B5FD',
+    'edgeLabelBackground': '#1a1a35',
+    'noteBkgColor': '#1a1a35',
+    'noteTextColor': '#C4B5FD',
+    'noteBorderColor': '#3B3B6B',
+    'activationBkgColor': '#3B0764',
+    'activationBorderColor': '#7C3AED',
+    'sequenceNumberColor': '#EDE9FE',
+    'fontSize': '14px',
+    'fontFamily': 'Inter, system-ui, sans-serif'
+  }
+}}%%
+
+sequenceDiagram
+  autonumber
+
+  participant U as 👤 User
+  participant WC as 🌐 Web Client
+  participant GW as ⚡ API Gateway<br/>(server.mjs)
+  participant HG as 🔀 Hermes Gateway<br/>(Kanban / SQLite)
+  participant TR as 🖊 Translator<br/>(Opus 4)
+  participant PH as ⚗ Philosophers<br/>(Wittgenstein · Quine · Frege)
+  participant CS as 🗳 Consensus<br/>(2-of-3 vote)
+  participant FS as 📁 Filesystem<br/>(corpus/runs/)
+  participant SC as 🔬 Scientists<br/>(Koehn · Cho · Vaswani)
+
+  rect rgb(14, 20, 40)
+    note over U,FS: PHASE 1 — Submission & Setup
+    U->>WC: Paste segments · click Translate
+    WC->>GW: POST /runs  { segments: [...], client: "<client-id>" }
+    activate GW
+    GW->>FS: mkdir corpus/runs/YYYY-MM-DD_NNN/<br/>write source/segments.json
+    GW->>HG: hermes kanban create<br/>--assignee translator
+    GW-->>WC: 202 Accepted  { run_id, ws_url }
+    deactivate GW
+    WC->>GW: WebSocket connect  ws://localhost:3000/runs/:id
+    note right of WC: Client now listens for<br/>progress events via WS
+  end
+
+  rect rgb(14, 30, 22)
+    note over HG,FS: PHASE 2 — Translation (Hot Path · Step 1)
+    HG->>TR: dispatch task: translate
+    activate TR
+    TR->>FS: read source/segments.json
+    TR->>FS: write final/translation_draft.json
+    deactivate TR
+    FS-->>GW: fs.watch() fires on file change
+    GW-->>WC: WS event  agent_done { agent: "translator", progress: 25% }
+  end
+
+  rect rgb(40, 28, 8)
+    note over HG,FS: PHASE 3 — Philosophical Review (Hot Path · Step 2, parallel)
+    HG->>PH: dispatch 3 tasks in parallel
+    activate PH
+    par Wittgenstein
+      PH->>FS: read translation_draft.json
+      PH->>FS: write final/critique_wittgenstein.json
+      FS-->>GW: fs.watch() fires
+      GW-->>WC: WS event  agent_done { agent: "wittgenstein", progress: 45% }
+    and Quine
+      PH->>FS: read translation_draft.json
+      PH->>FS: write final/critique_quine.json
+      FS-->>GW: fs.watch() fires
+      GW-->>WC: WS event  agent_done { agent: "quine", progress: 55% }
+    and Frege
+      PH->>FS: read translation_draft.json
+      PH->>FS: write final/critique_frege.json
+      FS-->>GW: fs.watch() fires
+      GW-->>WC: WS event  agent_done { agent: "frege", progress: 65% }
+    end
+    deactivate PH
+  end
+
+  rect rgb(40, 10, 10)
+    note over CS,FS: PHASE 4 — Consensus Vote
+    CS->>FS: read critique_wittgenstein.json<br/>read critique_quine.json<br/>read critique_frege.json
+    activate CS
+
+    alt 2+ Approve (happy path)
+      CS->>FS: write consensus/verdict.json  { result: "approve" }
+      CS-->>GW: verdict: approve
+      GW-->>WC: WS event  consensus_reached { verdict: "approve", progress: 75% }
+    else Revise (loop — max 3 rounds)
+      CS->>FS: write consensus/verdict.json  { result: "revise", notes: [...] }
+      CS-->>HG: re-queue translator with feedback
+      note over HG,CS: Revision loop repeats<br/>up to 3 rounds
+    else Block (human escalation)
+      CS->>FS: write consensus/verdict.json  { result: "block" }
+      CS-->>GW: verdict: block → human review required
+      GW-->>WC: WS event  escalation_required
+    end
+    deactivate CS
+  end
+
+  rect rgb(14, 20, 40)
+    note over GW,FS: PHASE 5 — Artifact Generation
+    GW->>FS: generate final/review.html<br/>(bilingual EN · DE + critic panel)
+    GW->>FS: html-to-pdf → final/review.pdf
+    FS-->>GW: pdf ready
+    GW-->>WC: WS event  artifact_ready { format: "pdf", progress: 95% }
+    GW-->>WC: WS event  run_complete { status: "done", progress: 100% }
+  end
+
+  rect rgb(14, 20, 40)
+    note over U,FS: PHASE 6 — Download
+    U->>WC: Click Download PDF
+    WC->>GW: GET /runs/:id/artifact?format=pdf
+    GW-->>WC: 200  application/pdf  (review.pdf)
+    WC-->>U: File download complete
+  end
+
+  rect rgb(10, 30, 22)
+    note over SC,FS: PHASE 7 — Async Science Audits (post-merge · cron-triggered)
+    note over SC: These run independently after<br/>the run is merged to corpus.<br/>They do NOT block delivery.
+    SC->>FS: Koehn: git diff → detect skill regression
+    SC->>FS: Cho: read MEMORY.md → cross-agent integrity
+    SC->>FS: Vaswani: token audit → prune skills / identity drift
+    SC->>FS: write feedback/ reports
+  end

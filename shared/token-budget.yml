@@ -1,0 +1,129 @@
+# Interpretation AI Cell — Token Budget Configuration
+# Manages token allocation and cost tracking across all agents
+#
+# Dual-provider setup:
+#   Production: Anthropic (Claude Opus 4 / Sonnet 4)
+#   Test:       z.ai (GLM-4.7-Flash / FlashX / GLM-5.1)
+#
+# Switch with: make env-prod | make env-test
+
+# ── Provider Pricing ────────────────────────────────────────────
+pricing:
+  anthropic:
+    opus:
+      input_per_1m: 15.0             # $15 per 1M input tokens
+      output_per_1m: 75.0            # $75 per 1M output tokens
+    sonnet:
+      input_per_1m: 3.0              # $3 per 1M input tokens
+      output_per_1m: 15.0            # $15 per 1M output tokens
+    currency: USD
+
+  z-ai:
+    flash:
+      input_per_1m: 0.0              # Free tier
+      output_per_1m: 0.0             # Free tier
+    flashx:
+      input_per_1m: 0.0              # Free tier
+      output_per_1m: 0.0             # Free tier
+    glm-5.1:
+      input_per_1m: 0.50             # ~0.50 CNY per 1M (approx)
+      output_per_1m: 1.00            # ~1.00 CNY per 1M (approx)
+    currency: CNY
+
+# ── Global Limits ───────────────────────────────────────────────
+global:
+  max_tokens_per_hour: 500000        # Across all agents combined
+  max_requests_per_minute: 50        # Rate limit buffer
+  max_concurrent_requests: 5         # Parallel API calls
+
+# ── Per-Agent Budgets ───────────────────────────────────────────
+# These limits apply regardless of which provider is active.
+agents:
+  translator:
+    model_prod: claude-opus-4-20250514
+    model_test: glm-4.7-flash
+    model_test_ab: glm-4.7-flashx
+    model_prod_ab: claude-sonnet-4-20250514
+    max_tokens_per_invocation: 4096
+    max_invocations_per_hour: 100
+    tier_prod: opus
+    tier_test: flash
+
+  wittgenstein:
+    model_prod: claude-sonnet-4-20250514
+    model_test: glm-4.7-flash
+    max_tokens_per_invocation: 2048
+    max_invocations_per_hour: 100
+    tier_prod: sonnet
+    tier_test: flash
+
+  quine:
+    model_prod: claude-sonnet-4-20250514
+    model_test: glm-4.7-flash
+    max_tokens_per_invocation: 2048
+    max_invocations_per_hour: 100
+    tier_prod: sonnet
+    tier_test: flash
+
+  frege:
+    model_prod: claude-sonnet-4-20250514
+    model_test: glm-4.7-flash
+    max_tokens_per_invocation: 2048
+    max_invocations_per_hour: 100
+    tier_prod: sonnet
+    tier_test: flash
+
+  koehn:
+    model_prod: claude-sonnet-4-20250514
+    model_test: glm-5.1
+    max_tokens_per_invocation: 8192
+    max_invocations_per_hour: 20
+    tier_prod: sonnet
+    tier_test: glm-5.1
+
+  cho:
+    model_prod: claude-sonnet-4-20250514
+    model_test: glm-5.1
+    max_tokens_per_invocation: 8192
+    max_invocations_per_hour: 20
+    tier_prod: sonnet
+    tier_test: glm-5.1
+
+  vaswani:
+    model_prod: claude-sonnet-4-20250514
+    model_test: glm-5.1
+    max_tokens_per_invocation: 8192
+    max_invocations_per_hour: 20
+    tier_prod: sonnet
+    tier_test: glm-5.1
+
+# ── Cost Tracking ───────────────────────────────────────────────
+cost_tracking:
+  enabled: true
+  daily_alert_threshold:
+    production: 50.0                 # USD — alert if daily spend exceeds $50
+    test: 10.0                       # CNY — alert if daily GLM-5.1 spend exceeds 10 CNY
+  weekly_report: true
+  track_all_tiers: true
+
+# ── Cost Estimates (per translation unit) ───────────────────────
+# Based on typical segment sizes (~200 words source, ~250 words target)
+cost_estimates:
+  production:                        # Anthropic pricing
+    translator_per_segment: 0.02     # ~500 input + ~600 output tokens @ Opus rates
+    philosopher_per_segment: 0.005   # ~800 input + ~400 output tokens @ Sonnet rates
+    full_pipeline_per_segment: 0.035 # translator + 3 philosophers
+    full_pipeline_100_segments: 3.50
+  test:                              # z.ai pricing
+    translator_per_segment: 0.00     # Free (Flash/FlashX)
+    philosopher_per_segment: 0.00    # Free (Flash)
+    full_pipeline_per_segment: 0.00  # Hot path is free
+    scientist_audit_per_run: 0.005   # Only GLM-5.1 costs (minimal)
+
+# ── Budget Adjustment Rules ─────────────────────────────────────
+adjustment_rules:
+  underutilized_threshold: 0.50
+  saturated_threshold: 0.95
+  adjustment_step: 0.15
+  min_tokens_per_invocation: 500
+  max_tokens_per_invocation: 16000

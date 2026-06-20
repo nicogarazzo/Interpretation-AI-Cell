@@ -1,0 +1,13 @@
+name: cho
+version: 1.0.0
+description: "Scientist agent — memory state integrity and cross-agent coherence audit"
+hermes_requires: ">=0.12.0"
+author: "Nicolas Calderon"
+license: "MIT"
+env_requires:
+  - name: ANTHROPIC_API_KEY
+    description: "Anthropic API key for Claude models (production)"
+    required: false
+  - name: GLM_API_KEY
+    description: "z.ai API key for GLM models (test)"
+    required: false

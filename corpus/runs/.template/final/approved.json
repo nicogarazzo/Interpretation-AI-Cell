@@ -1,0 +1,23 @@
+{
+  "_schema": "interpretation-ai-cell/approved-translation/v1",
+  "run_id": "",
+  "approved_at": "",
+  "approval_method": "",
+  "consensus_rounds": 0,
+  "translations": [
+    {
+      "segment_id": "seg_001",
+      "source_text": "",
+      "final_text": "",
+      "revision_history": [],
+      "quality_signals": {
+        "wittgenstein_confidence": 0.0,
+        "quine_confidence": 0.0,
+        "frege_confidence": 0.0,
+        "consensus_score": 0.0
+      },
+      "glossary_terms_used": [],
+      "client_patterns_applied": []
+    }
+  ]
+}

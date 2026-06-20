@@ -1,0 +1,69 @@
+{
+  "verdict": "approve",
+  "confidence": 0.92,
+  "critique": {
+    "issues": [],
+    "approved_spans": [
+      {
+        "segment_id": "seg_002",
+        "span_source": {"start": 0, "end": 90, "text": "European food recalls topped 5,000: learn how precision wiping prevents costly audit failures"},
+        "span_target": {"start": 0, "end": 122, "text": "Über 5.000 Lebensmittelrückrufe in Europa: Erfahren Sie, wie präzises Wischen kostspielige Audit-Ausfälle verhindert"},
+        "comment": "No ambiguity issues. Clear one-to-one correspondence of meaning."
+      },
+      {
+        "segment_id": "seg_004", 
+        "span_source": {"start": 291, "end": 341, "text": "keeping your facility protected and your business ahead of regulatory demands"},
+        "span_target": {"start": 380, "end": 464, "text": "Ihre Anlage zu schützen und Ihr Unternehmen den regulatorischen Anforderungen einen Schritt voraus sein zu lassen"},
+        "comment": "'ahead of' metaphor preserved without introducing ambiguity. German construction is clear."
+      },
+      {
+        "segment_id": "seg_008",
+        "span_source": {"start": 53, "end": 113, "text": "missing an allergen can lead to recalls, production disruption"},
+        "span_target": {"start": 67, "end": 139, "text": "das Übersehen eines Allergens kann zu Rückrufen, Produktionsunterbrechungen"},
+        "comment": "No ambiguity. 'Missing' correctly rendered as 'Übersehen' (overlooking) - no dual reading."
+      },
+      {
+        "segment_id": "seg_012",
+        "span_source": {"start": 9, "end": 84, "text": "Selecting the right wiping solution is often overlooked when trying to achieve incremental gains"},
+        "span_target": {"start": 9, "end": 95, "text": "Die Auswahl der richtigen Wischlösung wird oft übersehen, wenn man versucht, schrittweise Verbesserungen"},
+        "comment": "No scope ambiguity. 'When' clause attachment is unambiguous in both languages."
+      },
+      {
+        "segment_id": "seg_014",
+        "span_source": {"start": 82, "end": 166, "text": "including waste reduction and safety improvements, can reveal the cost-in-use benefits"},
+        "span_target": {"start": 85, "end": 168, "text": "einschließlich Abfallreduzierung und Sicherheitsverbesserungen, kann die Nutzungskosten-Vorteile"},
+        "comment": "List structure clear in both languages. No PP-attachment ambiguity."
+      },
+      {
+        "segment_id": "seg_016",
+        "span_source": {"start": 183, "end": 299, "text": "provides the traceability and consistency that auditors expect"},
+        "span_target": {"start": 247, "end": 335, "text": "bietet auch die Rückverfolgbarkeit und Konsistenz, die Auditoren erwarten"},
+        "comment": "Relative clause attachment unambiguous. 'That auditors expect' clearly modifies both nouns."
+      },
+      {
+        "segment_id": "seg_020",
+        "span_source": {"start": 70, "end": 84, "text": "with right purpose"},
+        "span_target": {"start": 87, "end": 107, "text": "mit dem richtigen Zweck"},
+        "comment": "Brand concept translated literally. No ambiguity between 'correct purpose' vs 'proper intention'."
+      },
+      {
+        "segment_id": "seg_022",
+        "span_source": {"start": 117, "end": 225, "text": "how small changes prevent major issues, including labelling errors and product recalls"},
+        "span_target": {"start": 129, "end": 247, "text": "wie kleine Änderungen größere Probleme verhindern, einschließlich Kennzeichnungsfehler und Produktrückrufe"},
+        "comment": "List structure preserved without ambiguity. 'Including' scope is clear."
+      },
+      {
+        "segment_id": "seg_025",
+        "span_source": {"start": 130, "end": 194, "text": "prevent recalls and reduce labelling errors, while protecting both productivity and brand reputation"},
+        "span_target": {"start": 145, "end": 233, "text": "Rückrufe zu verhindern und Kennzeichnungsfehler zu reduzieren, während sowohl Produktivität als auch Markenreputation geschützt werden"},
+        "comment": "Coordination structure clear. 'Both...and' correctly preserved with 'sowohl...als auch'."
+      },
+      {
+        "segment_id": "seg_027",
+        "span_source": {"start": 146, "end": 241, "text": "delivering significant cost savings and greater operational efficiency, as well as measurable progress"},
+        "span_target": {"start": 161, "end": 260, "text": "was erhebliche Kosteneinsparungen und größere betriebliche Effizienz sowie messbare Fortschritte"},
+        "comment": "Complex coordination preserved without ambiguity. 'As well as' rendered clearly with 'sowie'."
+      }
+    ]
+  }
+}

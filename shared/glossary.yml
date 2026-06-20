@@ -1,0 +1,296 @@
+# Interpretation AI Cell — Canonical EN-DE Glossary
+# Version: 1.0.0
+# Last updated: 2026-05-29
+# Governance: additions require Frege profile approval via Kanban task
+# Legal/medical domain terms require additional human review
+
+version: "1.0.0"
+last_updated: "2026-05-29"
+
+update_policy:
+  requires_approval_from: ["frege"]
+  auto_add_from_philosopher_suggestions: false
+  human_review_for_domains: ["legal", "medical", "financial"]
+
+terms:
+  # ── Technology ──────────────────────────────────────────────────
+  - en: "artificial intelligence"
+    de: "kuenstliche Intelligenz"
+    domain: "technology"
+    notes: "Never abbreviate to KI in formal documents unless audience is technical German"
+
+  - en: "machine learning"
+    de: "maschinelles Lernen"
+    domain: "technology"
+    notes: "Not 'Maschinenlernen' (deprecated compound)"
+
+  - en: "deep learning"
+    de: "Deep Learning"
+    domain: "technology"
+    notes: "Keep English term — established loanword in German tech"
+
+  - en: "neural network"
+    de: "neuronales Netz"
+    domain: "technology"
+    notes: "Plural: neuronale Netze. Also acceptable: neuronales Netzwerk"
+
+  - en: "cloud computing"
+    de: "Cloud-Computing"
+    domain: "technology"
+    notes: "Hyphenated compound. Never 'Wolkenrechnen'"
+
+  - en: "software development"
+    de: "Softwareentwicklung"
+    domain: "technology"
+    notes: "Single compound word, no space"
+
+  - en: "user interface"
+    de: "Benutzeroberflaeche"
+    domain: "technology"
+    notes: "Also acceptable: Nutzeroberflaeche"
+
+  - en: "database"
+    de: "Datenbank"
+    domain: "technology"
+    notes: "Plural: Datenbanken"
+
+  - en: "open source"
+    de: "Open Source"
+    domain: "technology"
+    notes: "Keep English. As adjective: Open-Source-Software (hyphenated compound)"
+
+  - en: "framework"
+    de: "Framework"
+    domain: "technology"
+    notes: "Keep English — established loanword. In formal: Rahmenwerk (rare)"
+
+  - en: "startup"
+    de: "Start-up"
+    domain: "technology"
+    notes: "Hyphenated per Duden. Also acceptable: Startup"
+
+  # ── Legal ───────────────────────────────────────────────────────
+  - en: "data protection"
+    de: "Datenschutz"
+    domain: "legal"
+    notes: "NEVER translate as 'Datensicherheit' (that means data security, different concept)"
+
+  - en: "data security"
+    de: "Datensicherheit"
+    domain: "legal"
+    notes: "Distinct from Datenschutz (data protection). Do not conflate"
+
+  - en: "privacy policy"
+    de: "Datenschutzerklaerung"
+    domain: "legal"
+    notes: "Not 'Privatsphaererichtlinie'. Datenschutzerklaerung is the legal standard"
+
+  - en: "terms and conditions"
+    de: "Allgemeine Geschaeftsbedingungen"
+    domain: "legal"
+    notes: "Abbreviation: AGB. Use full form on first mention, then AGB"
+
+  - en: "liability"
+    de: "Haftung"
+    domain: "legal"
+    notes: "Limited liability = beschraenkte Haftung"
+
+  - en: "intellectual property"
+    de: "geistiges Eigentum"
+    domain: "legal"
+    notes: "IP rights = Rechte an geistigem Eigentum. Also: gewerbliche Schutzrechte (industrial context)"
+
+  - en: "compliance"
+    de: "Compliance"
+    domain: "legal"
+    notes: "Keep English — established legal term in German. Alternative: Regeltreue (rare)"
+
+  - en: "non-disclosure agreement"
+    de: "Geheimhaltungsvereinbarung"
+    domain: "legal"
+    notes: "Also: Vertraulichkeitsvereinbarung. NDA is understood but use German in contracts"
+
+  - en: "contract"
+    de: "Vertrag"
+    domain: "legal"
+    notes: "Employment contract = Arbeitsvertrag. Service contract = Dienstleistungsvertrag"
+
+  # ── Business ────────────────────────────────────────────────────
+  - en: "revenue"
+    de: "Umsatz"
+    domain: "business"
+    notes: "Not 'Einnahmen' (that's income/receipts). Umsatz = top-line revenue"
+
+  - en: "profit"
+    de: "Gewinn"
+    domain: "business"
+    notes: "Gross profit = Bruttogewinn. Net profit = Nettogewinn/Reingewinn"
+
+  - en: "stakeholder"
+    de: "Stakeholder"
+    domain: "business"
+    notes: "Keep English — widely used. Alternative: Interessengruppe (formal government docs)"
+
+  - en: "supply chain"
+    de: "Lieferkette"
+    domain: "business"
+    notes: "Supply chain management = Lieferkettenmanagement"
+
+  - en: "quarterly report"
+    de: "Quartalsbericht"
+    domain: "business"
+    notes: "Single compound"
+
+  - en: "market share"
+    de: "Marktanteil"
+    domain: "business"
+    notes: "Single compound"
+
+  - en: "customer experience"
+    de: "Kundenerlebnis"
+    domain: "business"
+    notes: "Also acceptable: Kundenerfahrung. CX is understood in German business"
+
+  - en: "bottom line"
+    de: "Endergebnis"
+    domain: "business"
+    notes: "Figurative use (ultimately) = letzten Endes. Financial use = Endergebnis"
+
+  # ── Medical ─────────────────────────────────────────────────────
+  - en: "clinical trial"
+    de: "klinische Studie"
+    domain: "medical"
+    notes: "Also: klinische Pruefung (regulatory context)"
+
+  - en: "side effect"
+    de: "Nebenwirkung"
+    domain: "medical"
+    notes: "Adverse side effect = unerwuenschte Nebenwirkung"
+
+  - en: "diagnosis"
+    de: "Diagnose"
+    domain: "medical"
+    notes: "Plural: Diagnosen"
+
+  - en: "treatment"
+    de: "Behandlung"
+    domain: "medical"
+    notes: "Medical treatment = aerztliche Behandlung. Also: Therapie (for ongoing treatment)"
+
+  - en: "patient"
+    de: "Patient"
+    domain: "medical"
+    notes: "Female: Patientin. Plural: Patienten/Patientinnen. Gender-neutral: Patienten (generic plural)"
+
+  # ── General / Idioms ────────────────────────────────────────────
+  - en: "at the end of the day"
+    de: "letzten Endes"
+    domain: "general"
+    type: "idiom"
+    notes: "Idiomatic, meaning 'ultimately'. NOT temporal. If literal (time of day), use 'am Ende des Tages'"
+
+  - en: "break the ice"
+    de: "das Eis brechen"
+    domain: "general"
+    type: "idiom"
+    notes: "Same idiom exists in German. Can be both literal and figurative. ARTICLE: 'das Eis' (neuter) — NEVER 'die Eis'. This is a rare EN→DE direct idiom match."
+
+  - en: "think outside the box"
+    de: "ueber den Tellerrand hinausschauen"
+    domain: "general"
+    type: "idiom"
+    notes: "Literally 'look beyond the plate's edge'. Never 'ausserhalb der Box denken'"
+
+  - en: "keep in mind"
+    de: "bedenken"
+    domain: "general"
+    type: "idiom"
+    notes: "Also: beruecksichtigen (formal), im Hinterkopf behalten (casual)"
+
+  - en: "on the other hand"
+    de: "andererseits"
+    domain: "general"
+    type: "idiom"
+    notes: "Also: auf der anderen Seite. In formal writing prefer andererseits"
+
+  - en: "state of the art"
+    de: "Stand der Technik"
+    domain: "general"
+    notes: "As adjective: hochmodern, auf dem neuesten Stand"
+
+  - en: "best practice"
+    de: "Best Practice"
+    domain: "general"
+    notes: "Keep English — established loanword. Alternative: bewaehrte Methode"
+
+  - en: "feedback"
+    de: "Feedback"
+    domain: "general"
+    notes: "Keep English — fully adopted. Alternative: Rueckmeldung"
+
+  - en: "deadline"
+    de: "Frist"
+    domain: "general"
+    notes: "Also: Abgabetermin, Stichtag. 'Deadline' is understood but prefer German in formal text"
+
+  - en: "meeting"
+    de: "Besprechung"
+    domain: "general"
+    notes: "Formal: Besprechung, Sitzung. Casual: Meeting (loanword). Board meeting = Vorstandssitzung"
+
+  # ── Client-Specific Terms ─────────────────────────────────────
+  # Client domain terms are maintained in per-client skill files:
+  #   profiles/translator/skills/<client>/SKILL.md
+  # Do NOT add client-specific terms to this canonical glossary.
+  # This glossary contains only domain-generic EN→DE terms.
+
+  # ── Commonly Mistranslated ─────────────────────────────────────
+  - en: "eventually"
+    de: "schliesslich"
+    domain: "general"
+    notes: "FALSE FRIEND: 'eventuell' means 'possibly', NOT 'eventually'"
+
+  - en: "actual"
+    de: "tatsaechlich"
+    domain: "general"
+    notes: "FALSE FRIEND: 'aktuell' means 'current', NOT 'actual'"
+
+  - en: "become"
+    de: "werden"
+    domain: "general"
+    notes: "FALSE FRIEND: 'bekommen' means 'to receive', NOT 'to become'"
+
+  - en: "gift"
+    de: "Geschenk"
+    domain: "general"
+    notes: "FALSE FRIEND: 'Gift' in German means 'poison'"
+
+  - en: "chef"
+    de: "Kuechenchef"
+    domain: "general"
+    notes: "FALSE FRIEND: 'Chef' in German means 'boss'. Kitchen chef = Kuechenchef/Koch"
+
+  - en: "brave"
+    de: "mutig"
+    domain: "general"
+    notes: "FALSE FRIEND: 'brav' in German means 'well-behaved', NOT 'brave'"
+
+  - en: "sensible"
+    de: "vernuenftig"
+    domain: "general"
+    notes: "FALSE FRIEND: 'sensibel' means 'sensitive', NOT 'sensible'"
+
+  - en: "gymnasium"
+    de: "Turnhalle"
+    domain: "general"
+    notes: "FALSE FRIEND: 'Gymnasium' in German is a type of secondary school"
+
+  - en: "handy"
+    de: "praktisch"
+    domain: "general"
+    notes: "FALSE FRIEND: 'Handy' in German means 'mobile phone/cell phone'"
+
+  - en: "novel"
+    de: "Roman"
+    domain: "general"
+    notes: "The book genre. As adjective (novel idea) = neuartig. 'Novelle' is a specific literary form (shorter than novel)"

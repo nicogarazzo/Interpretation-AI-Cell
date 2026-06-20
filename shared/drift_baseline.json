@@ -1,0 +1,12 @@
+{
+  "translator": "ee22c7c03c391bc0049acc02e3ee66b27dd41ac08362d17543bfbda39f1649d6",
+  "wittgenstein": "74055d89df3a88c6043ead92dd9f3a64d457bd1d8de5ea0dff1f854e1148d57e",
+  "quine": "759191d5b7694051a7fc1f8472eae192568d3f88bb28e3972f404f38d148586c",
+  "frege": "1f8bf8e36a8af47c6a0f79e31824c7a260e10f90f79664bbdf6855192fc74725",
+  "koehn": "9979a9bb6b19722f2211c7f4d056e651aa244e0a1d27d2d7140a330bc9c8e35f",
+  "cho": "202001b907180ada1c6992e7baaf815d471dac67c2f62435cd9b74a1eec3e7a9",
+  "vaswani": "bb70f4e7ad6182926e37d6ad76f658ea9fda14a5b7b0922816b76cba13c24702",
+  "_generated": "2026-05-30T00:00:00Z",
+  "_method": "SHA-256 of full profiles/<agent>/SOUL.md files",
+  "_note": "Any mismatch between current SOUL.md hash and this baseline triggers a CRITICAL identity drift alert from Vaswani."
+}

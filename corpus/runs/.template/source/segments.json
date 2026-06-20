@@ -1,0 +1,18 @@
+{
+  "_schema": "interpretation-ai-cell/segments/v1",
+  "_description": "Source text segmented into translation units. Each segment is an independently translatable unit.",
+  "segments": [
+    {
+      "id": "seg_001",
+      "type": "post_copy",
+      "text": "",
+      "context": {
+        "asset_name": "",
+        "funnel_stage": "",
+        "content_type": "",
+        "character_limit": null,
+        "notes": ""
+      }
+    }
+  ]
+}

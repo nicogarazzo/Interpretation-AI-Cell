@@ -1,0 +1,37 @@
+name: post-merge-audit
+description: >
+  Triggers Koehn's diff-audit and regression-detection skills after every merge
+  to the main branch. Ensures no unreviewed changes reach production and catches
+  quality regressions while the context is fresh.
+
+schedule:
+  event: post-merge
+  branch: main
+
+tasks:
+  - id: diff-audit
+    skill: profiles/koehn/skills/diff-audit/SKILL.md
+    description: >
+      Parse the merge diff, categorize all changed files, and flag red flags
+      (large deletions, skill downgrades, memory truncation).
+    timeout: 120s
+    on_failure: notify
+
+  - id: regression-detection
+    skill: profiles/koehn/skills/regression-detection/SKILL.md
+    depends_on: diff-audit
+    description: >
+      Check latest batch metrics against trailing-50 baselines. If a regression
+      is detected, correlate with skill changes identified in the diff-audit step.
+    timeout: 180s
+    on_failure: notify
+
+notify:
+  channel: audit-log
+  on: failure
+  message: "Post-merge audit failed — manual review required for merge ${MERGE_SHA}"
+
+kanban:
+  board: interpretation-cell
+  column: automated
+  label: koehn-audit

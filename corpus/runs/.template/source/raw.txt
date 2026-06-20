@@ -1,0 +1,12 @@
+SOURCE: [document title]
+URL: [source URL or "PDF — no URL"]
+EXTRACTED: [YYYY-MM-DD]
+FORMAT: [landing_page | linkedin_ad | case_study | email | ...]
+CLIENT: [client identifier]
+LANGUAGE: [en-GB | en-US | ...]
+
+================================================================================
+[Paste raw extracted content here, preserving original structure]
+[Use === PAGE N === or === SECTION NAME === as dividers]
+[Do not clean up or edit — this is the verbatim source]
+================================================================================

@@ -1,0 +1,148 @@
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'background': '#0d0d1a',
+    'mainBkg': '#0d0d1a',
+    'primaryColor': '#6B46C1',
+    'primaryTextColor': '#ffffff',
+    'primaryBorderColor': '#7C3AED',
+    'lineColor': '#7C3AED',
+    'clusterBkg': '#13132b',
+    'clusterBorder': '#3B3B6B',
+    'titleColor': '#C4B5FD',
+    'edgeLabelBackground': '#1a1a35',
+    'fontSize': '15px',
+    'fontFamily': 'Inter, system-ui, sans-serif'
+  },
+  'flowchart': {
+    'rankSpacing': 80,
+    'nodeSpacing': 32,
+    'curve': 'basis',
+    'diagramPadding': 55,
+    'htmlLabels': true
+  }
+}}%%
+
+flowchart TD
+
+  %% ── LAYER 1: BROWSER (top entry point) ────────────────────────
+  BROWSER["🌐 Web Browser  ·  HTML / JS Client\nSends: POST /runs  ·  GET /runs/:id/artifact\nReceives: WebSocket progress stream"]
+
+  %% ── LAYER 2: API GATEWAY ───────────────────────────────────────
+  subgraph L2["  Layer 2  ·  API Gateway  ·  scripts/server.mjs  ·  Node.js :3000  "]
+    direction LR
+    GW_REST["REST API\nPOST /runs\nGET /runs/:id/status\nGET /runs/:id/artifact"]
+    GW_WS["WebSocket Server\nws://localhost:3000/runs/:id\nEmits agent_done · consensus_reached\nartifact_ready · run_complete events"]
+  end
+
+  %% ── LAYER 3: HERMES ────────────────────────────────────────────
+  subgraph L3["  Layer 3  ·  Hermes Gateway  ·  SQLite WAL Kanban Queue  "]
+    direction LR
+    HERMES["hermes gateway\nBackground orchestrator"]
+    KANBAN["Kanban Board\npending → active → done"]
+  end
+
+  %% ── LAYER 4A: HOT PATH ─────────────────────────────────────────
+  subgraph L4["  Layer 4A  ·  Hot Path  ·  Claude Opus 4  ·  sequential translation + review  "]
+    direction LR
+    TRANSLATOR["🖊 Translator  ·  Claude Opus 4\nsegments.json → translation_draft.json"]
+    WITTGENSTEIN["⚗ Wittgenstein  ·  Claude Opus 4\nPragmatics & Idioms\ncritique_wittgenstein.json"]
+    QUINE["🔬 Quine  ·  Claude Opus 4\nAmbiguity & Indeterminacy\ncritique_quine.json"]
+    FREGE["📐 Frege  ·  Claude Opus 4\nSinn / Bedeutung / Register\ncritique_frege.json"]
+  end
+
+  %% ── LAYER 4B: CONSENSUS ────────────────────────────────────────
+  subgraph L5["  Layer 4B  ·  Consensus Engine  ·  2-of-3 weighted vote  "]
+    direction LR
+    VOTE["Vote Aggregator\napprove · revise · block\nMax 3 revision rounds"]
+    VERDICT["verdict.json\n✓ Approve → generate artifact\n↺ Revise  → re-queue translator\n✕ Block   → human escalation"]
+  end
+
+  %% ── LAYER 5: FILESYSTEM ────────────────────────────────────────
+  subgraph L6["  Layer 5  ·  Corpus / Filesystem  ·  corpus/runs/YYYY-MM-DD_NNN/  "]
+    direction LR
+    FS_SRC["source/\nsegments.json"]
+    FS_FIN["final/\ntranslation_draft.json  ·  critique_*.json\nreview.html  ·  review.pdf  ·  approved.json"]
+    FS_CON["consensus/\nverdict.json"]
+    FS_FB["feedback/\nscientist audit reports\n+ artifact download target"]
+  end
+
+  %% ── LAYER 4C: SCIENTISTS ───────────────────────────────────────
+  subgraph L7["  Layer 4C  ·  Scientist Agents  ·  Claude Sonnet 4  ·  async · post-merge · cron  "]
+    direction LR
+    KOEHN["📊 Koehn  ·  Claude Sonnet 4\nGit diff auditor\nSkill regression detection"]
+    CHO["🧠 Cho  ·  Claude Sonnet 4\nMemory state analyst\nCross-agent MEMORY.md integrity"]
+    VASWANI["⚡ Vaswani  ·  Claude Sonnet 4\nToken economy optimizer\nIdentity drift · skill pruning"]
+  end
+
+  %% ── LAYER 6: SHARED CONFIG ─────────────────────────────────────
+  subgraph L8["  Layer 6  ·  Shared Configuration  ·  injected at agent startup  "]
+    direction LR
+    ENV["environment.yml\nprod: Anthropic · test: z.ai GLM"]
+    BUDGET["token-budget.yml\npricing · limits per agent"]
+    GLOSSARY["glossary.yml\nCanonical EN-DE terms"]
+    CC["consensus-config.yml\nvote weights · round limits"]
+  end
+
+  %% ════════════════════════════════════════════
+  %% EDGES — every edge points downward only
+  %% ════════════════════════════════════════════
+
+  BROWSER --> GW_REST
+  BROWSER --> GW_WS
+
+  GW_REST -->|"hermes kanban create"| HERMES
+  HERMES --> KANBAN
+
+  KANBAN -->|"dispatch: translate"| TRANSLATOR
+  TRANSLATOR -->|"dispatch (x3 parallel)"| WITTGENSTEIN
+  TRANSLATOR -->|"dispatch (x3 parallel)"| QUINE
+  TRANSLATOR -->|"dispatch (x3 parallel)"| FREGE
+
+  WITTGENSTEIN --> VOTE
+  QUINE --> VOTE
+  FREGE --> VOTE
+  VOTE --> VERDICT
+
+  TRANSLATOR --> FS_SRC
+  TRANSLATOR --> FS_FIN
+  WITTGENSTEIN --> FS_FIN
+  QUINE --> FS_FIN
+  FREGE --> FS_FIN
+  VOTE --> FS_CON
+  VERDICT --> FS_FIN
+  VERDICT --> FS_FB
+
+  GW_WS -->|"fs.watch callbacks\nprogress events stream"| FS_FIN
+  GW_WS -->|"fs.watch callbacks\nprogress events stream"| FS_CON
+
+  VERDICT -.->|"post-merge cron"| KOEHN
+  VERDICT -.->|"post-merge cron"| CHO
+  VERDICT -.->|"post-merge cron"| VASWANI
+  KOEHN --> FS_FB
+  CHO --> FS_FB
+  VASWANI --> FS_FB
+
+  L8 -.-> HERMES
+  L8 -.-> TRANSLATOR
+  L8 -.-> VOTE
+
+  %% ── Styles ─────────────────────────────────────────────────────
+  classDef primary  fill:#3B0764,stroke:#7C3AED,color:#EDE9FE,font-size:13px
+  classDef info     fill:#1E3A5F,stroke:#3B82F6,color:#DBEAFE,font-size:13px
+  classDef success  fill:#064E3B,stroke:#10B981,color:#D1FAE5,font-size:13px
+  classDef warning  fill:#6B3A0D,stroke:#F59E0B,color:#FEF3C7,font-size:12px
+  classDef danger   fill:#450A0A,stroke:#EF4444,color:#FECACA,font-size:12px
+  classDef b2b      fill:#022C22,stroke:#34D399,color:#A7F3D0,font-size:13px
+  classDef muted    fill:#1C1917,stroke:#78716C,color:#D6D3D1,font-size:12px
+  classDef cta      fill:#1E3A5F,stroke:#60A5FA,color:#BFDBFE,font-size:14px,font-weight:bold
+
+  class BROWSER cta
+  class GW_REST,GW_WS info
+  class HERMES,KANBAN primary
+  class TRANSLATOR success
+  class WITTGENSTEIN,QUINE,FREGE warning
+  class VOTE,VERDICT danger
+  class KOEHN,CHO,VASWANI b2b
+  class FS_SRC,FS_FIN,FS_CON,FS_FB muted
+  class ENV,BUDGET,GLOSSARY,CC muted

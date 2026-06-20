@@ -1,0 +1,38 @@
+# Interpretation AI Cell — Environment Configuration
+# Switch between test (z.ai, free) and production (Anthropic, paid)
+#
+# Usage:
+#   make env-test    → switch all agents to z.ai GLM models
+#   make env-prod    → switch all agents to Anthropic Claude models
+#   make preflight   → verify API credits before dispatching
+#
+# NEVER manually edit config.yaml model/provider lines — use the Makefile targets.
+
+active: production                   # test | production
+
+# ── Test Environment (z.ai / Zhipu AI) ─────────────────────────────
+test:
+  provider: zai
+  models:
+    translator: glm-4.6
+    philosopher: glm-4.6
+    scientist: glm-4.6
+    decomposer: glm-4.6
+  env_key: GLM_API_KEY
+  notes: |
+    Good for iteration, skill development, and pipeline testing.
+    NOT suitable for client deliverables.
+
+# ── Production Environment (Anthropic / Claude) ────────────────────
+production:
+  provider: anthropic
+  models:
+    translator: claude-opus-4-20250514       # $15/$75 per 1M tokens
+    philosopher: claude-opus-4-20250514      # $15/$75 per 1M tokens
+    scientist: claude-sonnet-4-20250514      # $3/$15 per 1M tokens
+    decomposer: claude-sonnet-4-20250514     # $3/$15 per 1M tokens
+  env_key: ANTHROPIC_API_KEY
+  notes: |
+    Opus 4 for client-facing translations and philosopher critics.
+    Sonnet 4 for scientist audits and decomposition.
+    All client deliverables MUST use production environment.

@@ -1,0 +1,13 @@
+{
+  "_schema": "interpretation-ai-cell/scientist-audit/v1",
+  "run_id": "",
+  "agent": "vaswani",
+  "timestamp": "",
+  "audit_result": "",
+  "findings": [],
+  "metrics_snapshot": {
+    "approval_rate_trailing_50": 0.0,
+    "error_category_distribution": {},
+    "skill_invocation_frequency": {}
+  }
+}

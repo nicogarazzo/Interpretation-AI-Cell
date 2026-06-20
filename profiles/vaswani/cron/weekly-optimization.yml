@@ -1,0 +1,38 @@
+name: weekly-optimization
+description: >
+  Vaswani's weekly optimization pass for context efficiency and skill hygiene.
+  Scheduled at 04:00 UTC on Sundays, one hour after Cho's memory audit, so that
+  Vaswani can incorporate Cho's coherence findings into pruning decisions.
+
+schedule:
+  cron: "0 4 * * 0"
+  timezone: UTC
+
+tasks:
+  - id: context-optimization
+    skill: profiles/vaswani/skills/context-optimization/SKILL.md
+    description: >
+      Analyze token usage per agent, identify waste, recommend budget adjustments,
+      apply progressive degradation if any agent is near context limits, and
+      evaluate A/B test results for model selection.
+    timeout: 300s
+    on_failure: notify
+
+  - id: skill-pruning
+    skill: profiles/vaswani/skills/skill-pruning/SKILL.md
+    depends_on: context-optimization
+    description: >
+      Scan all agent skills for pruning candidates, detect trigger collisions,
+      archive dead skills, and check for identity drift against SOUL.md baselines.
+    timeout: 300s
+    on_failure: notify
+
+notify:
+  channel: audit-log
+  on: failure
+  message: "Weekly optimization failed — Vaswani requires manual intervention"
+
+kanban:
+  board: interpretation-cell
+  column: automated
+  label: vaswani-optimization

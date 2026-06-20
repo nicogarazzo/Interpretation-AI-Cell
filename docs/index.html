@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interpretation AI Cell // FILE #001</title>
+<style>
+
+/* ─────────────────────────────────────────────────────────────────
+   TOKENS
+───────────────────────────────────────────────────────────────── */
+:root {
+  --bg:           #060609;
+  --bg-mid:       #0a0a10;
+  --bg-card:      #0d0d14;
+
+  --green:        #00e676;
+  --green-dim:    #00994d;
+  --green-glow:   rgba(0, 230, 118, 0.13);
+  --green-border: rgba(0, 230, 118, 0.22);
+
+  --amber:        #ffab00;
+  --amber-dim:    #b37700;
+  --amber-glow:   rgba(255, 171, 0, 0.10);
+  --amber-border: rgba(255, 171, 0, 0.22);
+
+  --cyan:         #00e5ff;
+  --cyan-dim:     #0099b3;
+  --cyan-glow:    rgba(0, 229, 255, 0.10);
+  --cyan-border:  rgba(0, 229, 255, 0.22);
+
+  --violet:       #b388ff;
+  --violet-glow:  rgba(179, 136, 255, 0.10);
+  --violet-border:rgba(179, 136, 255, 0.22);
+
+  --error:        #ff1744;
+  --error-glow:   rgba(255, 23, 68, 0.13);
+  --error-border: rgba(255, 23, 68, 0.32);
+
+  --wire:         rgba(255,255,255,0.055);
+  --wire-bright:  rgba(255,255,255,0.10);
+  --text:         #8a8a9a;
+  --text-mid:     #b0b0c0;
+  --text-bright:  #d4d4e8;
+  --paper:        #e8e2ce;
+  --paper-dim:    #a8a090;
+
+  --mono:  'Courier New', 'Lucida Console', monospace;
+  --serif: Georgia, 'Times New Roman', serif;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   RESET
+───────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  cursor: crosshair;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   SCANLINES
+───────────────────────────────────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   VIGNETTE
+───────────────────────────────────────────────────────────────── */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 9998; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.6) 100%);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   GRAIN
+───────────────────────────────────────────────────────────────── */
+.grain {
+  position: fixed; inset: -200px; z-index: 9997; pointer-events: none; opacity: 0.028;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   LAYOUT
+───────────────────────────────────────────────────────────────── */
+.wrap      { max-width: 860px;  margin: 0 auto; padding: 0 28px; }
+.wrap-wide { max-width: 1100px; margin: 0 auto; padding: 0 28px; }
+section { padding: 100px 0; }
+
+/* ─────────────────────────────────────────────────────────────────
+   UTILITIES
+───────────────────────────────────────────────────────────────── */
+.glow-g { color:var(--green);  text-shadow: 0 0 10px var(--green),  0 0 20px rgba(0,230,118,0.35); }
+.glow-a { color:var(--amber);  text-shadow: 0 0 10px var(--amber),  0 0 20px rgba(255,171,0,0.35); }
+.glow-c { color:var(--cyan);   text-shadow: 0 0 10px var(--cyan),   0 0 20px rgba(0,229,255,0.35); }
+.glow-v { color:var(--violet); text-shadow: 0 0 10px var(--violet), 0 0 20px rgba(179,136,255,0.35); }
+.glow-e { color:var(--error);  text-shadow: 0 0 10px var(--error),  0 0 20px rgba(255,23,68,0.35); }
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+.cursor { animation: blink 1s step-end infinite; }
+
+.hr {
+  display: flex; align-items: center; gap: 16px;
+  padding: 0 28px; max-width: 1100px; margin: 0 auto;
+}
+.hr-line { flex:1; height:1px; background:var(--wire); }
+.hr-text { font-family:var(--mono); font-size:10px; letter-spacing:3px; color:var(--wire-bright); white-space:nowrap; }
+
+/* ─────────────────────────────────────────────────────────────────
+   TYPOGRAPHY
+───────────────────────────────────────────────────────────────── */
+.sys-label {
+  display: block;
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 4px; text-transform: uppercase;
+  color: var(--green); text-shadow: 0 0 8px var(--green);
+  margin-bottom: 20px; opacity: 0.8;
+}
+
+h1 {
+  font-family: var(--serif); font-size: clamp(38px, 6vw, 72px);
+  font-weight: 400; line-height: 1.08; color: var(--paper); letter-spacing: -1px;
+}
+h1 .accent { color:var(--green); text-shadow: 0 0 18px var(--green); font-style:italic; }
+
+h2 {
+  font-family: var(--serif); font-size: clamp(26px, 4vw, 40px);
+  font-weight: 400; line-height: 1.18; color: var(--paper);
+  letter-spacing: -0.5px; margin-bottom: 28px;
+}
+
+p { font-family:var(--mono); font-size:14px; line-height:1.8; color:var(--text); margin-bottom:18px; }
+p:last-child { margin-bottom:0; }
+em     { color:var(--amber); font-style:normal; text-shadow:0 0 5px rgba(255,171,0,0.4); }
+strong { color:var(--text-bright); font-weight:700; }
+
+/* ─────────────────────────────────────────────────────────────────
+   CORNER BRACKET BOX
+───────────────────────────────────────────────────────────────── */
+.box { position:relative; padding:32px 36px; background:var(--bg-card); }
+.box::before,.box::after,.box .bl,.box .br { content:''; position:absolute; width:14px; height:14px; }
+.box::before { top:0;    left:0;  border-top:1px solid var(--wire-bright); border-left:1px solid var(--wire-bright); }
+.box::after  { top:0;    right:0; border-top:1px solid var(--wire-bright); border-right:1px solid var(--wire-bright); }
+.box .bl     { bottom:0; left:0;  border-bottom:1px solid var(--wire-bright); border-left:1px solid var(--wire-bright); }
+.box .br     { bottom:0; right:0; border-bottom:1px solid var(--wire-bright); border-right:1px solid var(--wire-bright); }
+
+/* ─────────────────────────────────────────────────────────────────
+   BUTTONS
+───────────────────────────────────────────────────────────────── */
+.btn {
+  display:inline-flex; align-items:center; gap:10px;
+  padding:12px 28px; font-family:var(--mono); font-size:11px;
+  letter-spacing:3px; text-transform:uppercase; text-decoration:none;
+  border:1px solid; transition:all 0.2s; cursor:crosshair;
+}
+.btn-g { color:var(--green); border-color:var(--green-border); background:var(--green-glow); text-shadow:0 0 8px var(--green); }
+.btn-g:hover { background:rgba(0,230,118,0.18); box-shadow:0 0 24px rgba(0,230,118,0.2); }
+.btn-w { color:var(--wire-bright); border-color:var(--wire); background:transparent; }
+.btn-w:hover { color:var(--text-bright); border-color:var(--wire-bright); background:var(--bg-card); }
+
+/* ─────────────────────────────────────────────────────────────────
+   NAV
+───────────────────────────────────────────────────────────────── */
+nav {
+  position:fixed; top:0; left:0; right:0; z-index:1000;
+  background:rgba(6,6,9,0.93); backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--wire); height:48px;
+  display:flex; align-items:center;
+}
+.nav-inner {
+  display:flex; align-items:center; justify-content:space-between;
+  width:100%; max-width:1100px; margin:0 auto; padding:0 28px;
+}
+.nav-id { font-family:var(--mono); font-size:11px; letter-spacing:2px; color:var(--green); text-shadow:0 0 8px var(--green); }
+.nav-id span { color:var(--wire-bright); }
+.nav-meta {
+  display:flex; gap:24px; font-family:var(--mono);
+  font-size:10px; letter-spacing:2px; color:var(--wire-bright);
+}
+.dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green); animation:blink 2s ease-in-out infinite; margin-right:6px; }
+
+/* ─────────────────────────────────────────────────────────────────
+   HERO
+───────────────────────────────────────────────────────────────── */
+#hero {
+  min-height:100vh; display:flex; flex-direction:column;
+  justify-content:center; position:relative; overflow:hidden;
+  padding:100px 0 80px;
+}
+.hero-grid {
+  position:absolute; inset:0; pointer-events:none;
+  background-image: linear-gradient(var(--wire) 1px,transparent 1px),
+    linear-gradient(90deg, var(--wire) 1px, transparent 1px);
+  background-size:52px 52px;
+  mask-image:radial-gradient(ellipse 65% 75% at 45% 50%, black 10%, transparent 80%);
+}
+.hero-sphere {
+  position:absolute; right:-60px; top:50%; transform:translateY(-50%);
+  width:500px; height:500px; opacity:0.065; pointer-events:none;
+}
+.jp-float {
+  position:absolute; font-family:var(--mono); font-size:11px;
+  color:var(--green); opacity:0.15; letter-spacing:4px;
+  writing-mode:vertical-rl; pointer-events:none;
+  animation:float-down 22s linear infinite;
+}
+@keyframes float-down {
+  from { transform:translateY(-80px); opacity:0; }
+  8%   { opacity:0.15; }
+  92%  { opacity:0.15; }
+  to   { transform:translateY(calc(100vh + 80px)); opacity:0; }
+}
+.jp-float:nth-child(1) { left:3%;   animation-delay:0s;  animation-duration:22s; }
+.jp-float:nth-child(2) { left:7%;   animation-delay:6s;  animation-duration:18s; font-size:9px; opacity:0.08; }
+.jp-float:nth-child(3) { right:5%;  animation-delay:3s;  animation-duration:26s; }
+.jp-float:nth-child(4) { right:13%; animation-delay:9s;  animation-duration:20s; font-size:9px; }
+.jp-float:nth-child(5) { left:17%;  animation-delay:14s; animation-duration:30s; opacity:0.07; }
+
+.hero-content { position:relative; z-index:1; }
+.hero-meta {
+  font-family:var(--mono); font-size:10px; letter-spacing:3px;
+  color:var(--wire-bright); margin-bottom:36px;
+  display:flex; gap:20px; flex-wrap:wrap;
+}
+.hero-sub {
+  font-family:var(--mono); font-size:15px; line-height:1.85;
+  color:var(--text); max-width:560px; margin-bottom:48px;
+}
+.hero-ctas { display:flex; gap:16px; flex-wrap:wrap; }
+.readout { font-family:var(--mono); font-size:11px; color:var(--wire-bright); letter-spacing:1px; line-height:2.1; }
+.rk { color:var(--green-dim); }
+
+/* ─────────────────────────────────────────────────────────────────
+   01 — SCENE / STAKES
+───────────────────────────────────────────────────────────────── */
+#scene { background:var(--bg-mid); }
+
+.stakes-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:2px;
+  margin:40px 0; background:var(--wire);
+}
+.stake-item {
+  background:var(--bg-card); padding:28px 30px;
+  transition:background 0.2s;
+}
+.stake-item:hover { background:var(--bg-mid); }
+.stake-code { font-family:var(--mono); font-size:9px; letter-spacing:3px; color:var(--amber); margin-bottom:10px; text-shadow:0 0 6px rgba(255,171,0,0.4); }
+.stake-title { font-family:var(--serif); font-size:17px; color:var(--paper); margin-bottom:10px; font-style:italic; }
+.stake-item p { font-size:12px; color:var(--text); margin:0; line-height:1.7; }
+
+/* ─────────────────────────────────────────────────────────────────
+   02 — THE FAILURE
+───────────────────────────────────────────────────────────────── */
+#failure { background:var(--bg); }
+
+.failure-quote {
+  border-left:2px solid var(--amber-border); padding:20px 28px; margin:36px 0;
+  font-family:var(--serif); font-size:19px; font-style:italic;
+  color:var(--paper-dim); line-height:1.65; position:relative;
+}
+.failure-quote::before {
+  content:'LOG ENTRY //'; position:absolute; top:-10px; left:28px;
+  font-family:var(--mono); font-size:9px; letter-spacing:3px;
+  color:var(--amber); text-shadow:0 0 6px var(--amber);
+  background:var(--bg); padding:0 8px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   03 — ROOT CAUSE
+───────────────────────────────────────────────────────────────── */
+#rootcause { background:var(--bg-mid); }
+
+.terminal {
+  background:var(--bg-card); border:1px solid var(--wire);
+  padding:0; margin-top:40px;
+}
+.t-bar {
+  background:var(--wire); padding:8px 16px;
+  display:flex; align-items:center; gap:8px;
+  border-bottom:1px solid var(--wire);
+}
+.td { width:8px; height:8px; border-radius:50%; display:inline-block; }
+.td-r{background:rgba(255,50,50,0.5);} .td-y{background:rgba(255,200,50,0.5);} .td-g{background:rgba(50,200,100,0.5);}
+.t-title-bar { font-size:10px; letter-spacing:2px; color:var(--wire-bright); margin:0 auto; }
+.t-body { padding:28px 32px; font-size:13px; line-height:2.1; color:var(--text); }
+.tg::before { content:'> '; color:var(--green); text-shadow:0 0 6px var(--green); }
+.ta::before { content:'> '; color:var(--amber); text-shadow:0 0 6px var(--amber); }
+.tc { color:var(--wire-bright); font-size:11px; padding-left:18px; }
+.tr {
+  color:var(--paper); font-family:var(--serif); font-size:17px; font-style:italic;
+  padding:12px 18px; margin:8px 0; border-left:2px solid var(--green-border);
+}
+.tb { height:14px; }
+
+/* ─────────────────────────────────────────────────────────────────
+   04 — THE PANEL (philosophers)
+───────────────────────────────────────────────────────────────── */
+#panel { background:var(--bg); }
+
+.philosophers {
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:2px; margin:48px 0; background:var(--wire);
+}
+.philo-card {
+  background:var(--bg-card); padding:36px 28px;
+  position:relative; transition:background 0.3s; overflow:hidden;
+}
+.philo-card:hover { background:var(--bg-mid); }
+.philo-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:1px;
+  opacity:0; transition:opacity 0.3s;
+}
+.pw::before { background:linear-gradient(90deg,transparent,var(--green),transparent); }
+.pq::before { background:linear-gradient(90deg,transparent,var(--cyan),transparent); }
+.pf::before { background:linear-gradient(90deg,transparent,var(--amber),transparent); }
+.philo-card:hover::before { opacity:1; }
+
+.p-id { font-family:var(--mono); font-size:9px; letter-spacing:3px; color:var(--wire-bright); margin-bottom:22px; opacity:0.5; }
+.p-glyph { font-family:var(--serif); font-size:40px; margin-bottom:14px; display:block; opacity:0.7; }
+.pw .p-glyph { color:var(--green); text-shadow:0 0 16px var(--green); }
+.pq .p-glyph { color:var(--cyan);  text-shadow:0 0 16px var(--cyan); }
+.pf .p-glyph { color:var(--amber); text-shadow:0 0 16px var(--amber); }
+.p-name { font-family:var(--serif); font-size:22px; color:var(--paper); margin-bottom:2px; }
+.p-jp   { font-family:var(--mono); font-size:10px; letter-spacing:4px; margin-bottom:8px; opacity:0.35; color:var(--text); }
+.p-axis { font-family:var(--mono); font-size:9px; letter-spacing:3px; text-transform:uppercase; margin-bottom:22px; }
+.pw .p-axis { color:var(--green); }
+.pq .p-axis { color:var(--cyan); }
+.pf .p-axis { color:var(--amber); }
+.p-body { font-family:var(--mono); font-size:13px; line-height:1.8; color:var(--text); }
+.p-status { margin-top:22px; font-family:var(--mono); font-size:10px; letter-spacing:2px; padding-top:14px; border-top:1px solid var(--wire); color:var(--wire-bright); }
+
+/* consensus gate */
+.gate {
+  background:var(--bg-card); border:1px solid var(--wire);
+  padding:40px; margin-top:2px; text-align:center;
+}
+.gate-head { font-family:var(--mono); font-size:10px; letter-spacing:4px; color:var(--wire-bright); margin-bottom:28px; }
+.gate-flow {
+  display:flex; align-items:center; justify-content:center;
+  gap:8px; flex-wrap:wrap; font-family:var(--mono); font-size:11px; margin-bottom:24px;
+}
+.gn { padding:6px 14px; border:1px solid; letter-spacing:2px; }
+.gn-g { color:var(--green); border-color:var(--green-border); background:var(--green-glow); }
+.gn-c { color:var(--cyan);  border-color:var(--cyan-border);  background:var(--cyan-glow); }
+.gn-a { color:var(--amber); border-color:var(--amber-border); background:var(--amber-glow); }
+.gn-p { color:var(--paper); border-color:var(--wire-bright);  background:var(--bg-mid); font-weight:bold; letter-spacing:3px; }
+.g-sep { color:var(--wire-bright); font-size:14px; }
+.gate p { font-family:var(--mono); font-size:12px; color:var(--text); max-width:560px; margin:0 auto; line-height:1.9; }
+
+/* führer case */
+.case {
+  background:rgba(10,3,3,0.9); border:1px solid var(--error-border);
+  padding:0; margin-top:48px;
+}
+.case-head {
+  background:rgba(255,23,68,0.07); border-bottom:1px solid var(--error-border);
+  padding:12px 24px; display:flex; align-items:center; gap:12px;
+  font-family:var(--mono); font-size:10px; letter-spacing:3px;
+}
+.case-label { color:var(--error); text-shadow:0 0 8px var(--error); }
+.case-meta  { color:var(--wire-bright); margin-left:auto; }
+.case-body  { padding:32px 36px; }
+.case-body h3 {
+  color:#ffaaaa; font-family:var(--serif); font-size:20px;
+  font-weight:400; letter-spacing:0; text-transform:none; margin-bottom:14px;
+}
+.case-body p { font-size:13px; color:#cc9999; }
+.cmp { display:grid; grid-template-columns:1fr 1fr; gap:2px; margin:28px 0; background:var(--wire); }
+.cmp-bad  { background:rgba(20,5,5,0.95); padding:22px 24px; }
+.cmp-good { background:rgba(3,12,7,0.95);  padding:22px 24px; }
+.cmp-lbl { font-family:var(--mono); font-size:9px; letter-spacing:3px; text-transform:uppercase; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+.cmp-bad  .cmp-lbl { color:var(--error); }
+.cmp-good .cmp-lbl { color:var(--green); }
+.cmp-txt { font-family:var(--serif); font-size:18px; font-style:italic; line-height:1.5; }
+.cmp-bad  .cmp-txt { color:#d08080; }
+.cmp-good .cmp-txt { color:#90d0a0; }
+.frege-note {
+  background:rgba(255,171,0,0.05); border-left:2px solid var(--amber-border);
+  padding:16px 20px; font-family:var(--mono); font-size:12px;
+  line-height:1.8; color:#b8a070;
+}
+.frege-note strong { color:var(--amber); }
+.case-result {
+  margin-top:18px; font-family:var(--mono); font-size:12px; color:#cc9999;
+  padding-top:18px; border-top:1px solid var(--error-border);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   05 — SCIENTISTS
+───────────────────────────────────────────────────────────────── */
+#scientists { background:var(--bg-mid); }
+
+.scientists-grid {
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:2px; margin:48px 0; background:var(--wire);
+}
+.sci-card {
+  background:var(--bg-card); padding:32px 26px;
+  position:relative; transition:background 0.3s;
+}
+.sci-card:hover { background:var(--bg-mid); }
+.sci-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:1px;
+  opacity:0; transition:opacity 0.3s;
+}
+.sk::before { background:linear-gradient(90deg,transparent,var(--violet),transparent); }
+.sc::before { background:linear-gradient(90deg,transparent,var(--violet),transparent); }
+.sv::before { background:linear-gradient(90deg,transparent,var(--violet),transparent); }
+.sci-card:hover::before { opacity:1; }
+
+.s-id   { font-family:var(--mono); font-size:9px; letter-spacing:3px; color:var(--wire-bright); margin-bottom:20px; opacity:0.45; }
+.s-glyph{ font-family:var(--serif); font-size:34px; margin-bottom:14px; display:block; opacity:0.65; color:var(--violet); text-shadow:0 0 14px var(--violet); }
+.s-name { font-family:var(--serif); font-size:20px; color:var(--paper); margin-bottom:2px; }
+.s-jp   { font-family:var(--mono); font-size:10px; letter-spacing:4px; margin-bottom:8px; opacity:0.3; color:var(--text); }
+.s-axis { font-family:var(--mono); font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--violet); margin-bottom:20px; }
+.s-body { font-family:var(--mono); font-size:13px; line-height:1.8; color:var(--text); }
+.s-status { margin-top:20px; font-family:var(--mono); font-size:10px; letter-spacing:2px; padding-top:14px; border-top:1px solid var(--wire); color:var(--wire-bright); }
+
+.audit-flow {
+  background:var(--bg-card); border:1px solid var(--wire);
+  padding:36px 40px; margin-top:2px;
+}
+.audit-title { font-family:var(--mono); font-size:10px; letter-spacing:4px; color:var(--wire-bright); margin-bottom:24px; text-align:center; }
+.audit-pipeline {
+  display:flex; align-items:center; justify-content:center;
+  gap:8px; flex-wrap:wrap; font-family:var(--mono); font-size:11px; margin-bottom:20px;
+}
+.an { padding:6px 14px; border:1px solid; letter-spacing:2px; }
+.an-pass { color:var(--green); border-color:var(--green-border); background:var(--green-glow); }
+.an-sci  { color:var(--violet); border-color:var(--violet-border); background:var(--violet-glow); }
+.an-warn { color:var(--amber); border-color:var(--amber-border); background:var(--amber-glow); }
+.audit-body { font-family:var(--mono); font-size:12px; color:var(--text); text-align:center; max-width:580px; margin:0 auto; line-height:1.9; }
+
+/* ─────────────────────────────────────────────────────────────────
+   06 — EVOLUTION / HERMES MEMORY
+───────────────────────────────────────────────────────────────── */
+#evolution { background:var(--bg); }
+
+.loop-diagram {
+  margin:40px 0;
+  display:grid; grid-template-columns:1fr 1fr; gap:2px;
+  background:var(--wire);
+}
+.loop-node {
+  background:var(--bg-card); padding:26px 30px;
+  transition:background 0.2s;
+}
+.loop-node:hover { background:var(--bg-mid); }
+.ln-num  { font-family:var(--mono); font-size:9px; letter-spacing:3px; color:var(--green); text-shadow:0 0 5px var(--green); margin-bottom:10px; }
+.ln-title{ font-family:var(--mono); font-size:12px; color:var(--text-bright); letter-spacing:2px; text-transform:uppercase; margin-bottom:10px; }
+.loop-node p { font-size:12px; color:var(--text); margin:0; line-height:1.7; }
+
+.memory-bar {
+  background:var(--bg-card); border:1px solid var(--wire);
+  padding:28px 32px; margin-top:2px;
+  font-family:var(--mono); font-size:12px; line-height:2.2; color:var(--text);
+}
+.mb-head { font-size:10px; letter-spacing:3px; color:var(--green); text-shadow:0 0 6px var(--green); margin-bottom:16px; opacity:0.8; }
+.mb-row  { display:flex; gap:16px; align-items:baseline; border-bottom:1px solid var(--wire); padding:6px 0; }
+.mb-row:last-child { border-bottom:none; }
+.mb-k    { color:var(--green-dim); min-width:180px; font-size:11px; }
+.mb-v    { color:var(--text-mid); font-size:12px; }
+.mb-status { color:var(--green); font-size:10px; letter-spacing:2px; margin-left:auto; text-shadow:0 0 5px var(--green); }
+
+/* ─────────────────────────────────────────────────────────────────
+   07 — OPEN SOURCE
+───────────────────────────────────────────────────────────────── */
+#oss { background:var(--bg-mid); }
+
+.oss-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:2px;
+  margin-top:40px; background:var(--wire);
+}
+.oss-item { background:var(--bg-card); padding:28px; transition:background 0.2s; }
+.oss-item:hover { background:var(--bg-mid); }
+.oss-num   { font-family:var(--mono); font-size:9px; letter-spacing:3px; color:var(--green-dim); margin-bottom:10px; }
+.oss-title { font-family:var(--mono); font-size:11px; color:var(--text-bright); letter-spacing:2px; text-transform:uppercase; margin-bottom:10px; }
+.oss-item p { font-size:12px; color:var(--text); margin:0; line-height:1.7; }
+
+/* ─────────────────────────────────────────────────────────────────
+   08 — CLOSING
+───────────────────────────────────────────────────────────────── */
+#closing { background:var(--bg); }
+
+.closing-wrap { max-width:680px; margin:0 auto; text-align:center; }
+.closing-glyph { font-family:var(--mono); font-size:11px; letter-spacing:8px; color:var(--wire-bright); margin-bottom:40px; display:block; }
+.closing-ctas  { display:flex; gap:16px; justify-content:center; margin-top:48px; flex-wrap:wrap; }
+.closing-note  { margin-top:24px; font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--wire-bright); line-height:2.2; }
+
+/* ─────────────────────────────────────────────────────────────────
+   FOOTER
+───────────────────────────────────────────────────────────────── */
+footer { background:var(--bg); border-top:1px solid var(--wire); padding:28px; }
+.footer-inner {
+  max-width:1100px; margin:0 auto;
+  display:flex; justify-content:space-between; align-items:center;
+  flex-wrap:wrap; gap:16px;
+}
+.footer-id { font-family:var(--mono); font-size:10px; letter-spacing:2px; color:var(--wire-bright); }
+.footer-links { display:flex; gap:24px; font-family:var(--mono); font-size:10px; letter-spacing:2px; }
+.footer-links a { color:var(--wire-bright); text-decoration:none; transition:color 0.2s; }
+.footer-links a:hover { color:var(--green); text-shadow:0 0 6px var(--green); }
+
+/* ─────────────────────────────────────────────────────────────────
+   SCROLL ANIMATION
+───────────────────────────────────────────────────────────────── */
+.fade-up {
+  opacity:0; transform:translateY(20px);
+  transition:opacity 0.65s ease, transform 0.65s ease;
+}
+.fade-up.visible { opacity:1; transform:translateY(0); }
+
+/* ─────────────────────────────────────────────────────────────────
+   RESPONSIVE
+───────────────────────────────────────────────────────────────── */
+@media (max-width:760px) {
+  .philosophers,.scientists-grid,.cmp,.loop-diagram,.oss-grid,.stakes-grid { grid-template-columns:1fr; }
+  .hero-sphere,.nav-meta { display:none; }
+  section { padding:64px 0; }
+  .wrap,.wrap-wide { padding:0 18px; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+
+<!-- Floating Japanese -->
+<div class="jp-float">意味　翻訳　哲学　言語</div>
+<div class="jp-float">フレーゲ　クワイン</div>
+<div class="jp-float">解釈　検証　承認　進化</div>
+<div class="jp-float">ウィトゲンシュタイン</div>
+<div class="jp-float">記憶　学習　監査</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-id">INTERPRETATION AI CELL <span>// FILE #001</span></div>
+    <div class="nav-meta">
+      <span><span class="dot"></span>GATEWAY ACTIVE</span>
+      <span>6 AGENTS LOADED</span>
+      <span>OPEN SOURCE</span>
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════════════
+     HERO — THE HOOK
+     Proposition: There's a hidden flaw in confident single-voice translation.
+═══════════════════════════════════════════════════════════════ -->
+<section id="hero">
+  <div class="hero-grid"></div>
+  <svg class="hero-sphere" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="200" cy="200" r="180" stroke="#00e676" stroke-width="0.5"/>
+    <ellipse cx="200" cy="200" rx="180" ry="55"  stroke="#00e676" stroke-width="0.45"/>
+    <ellipse cx="200" cy="200" rx="180" ry="105" stroke="#00e676" stroke-width="0.35"/>
+    <ellipse cx="200" cy="200" rx="55"  ry="180" stroke="#00e676" stroke-width="0.45"/>
+    <ellipse cx="200" cy="200" rx="105" ry="180" stroke="#00e676" stroke-width="0.35"/>
+    <line x1="20" y1="200" x2="380" y2="200" stroke="#00e676" stroke-width="0.35"/>
+    <line x1="200" y1="20"  x2="200" y2="380" stroke="#00e676" stroke-width="0.35"/>
+    <circle cx="200" cy="200" r="4" fill="#00e676" opacity="0.8"/>
+  </svg>
+
+  <div class="wrap hero-content">
+    <div class="hero-meta fade-up">
+      <span>INITIATED: 2026</span><span>//</span>
+      <span>STATUS: ACTIVE</span><span>//</span>
+      <span>AGENTS: WITTGENSTEIN · QUINE · FREGE · KOEHN · CHO · VASWANI</span>
+    </div>
+
+    <h1 class="fade-up" style="margin-bottom:36px;">
+      Your translator<br>is confident.<br>
+      <span class="accent">That's the problem.</span>
+    </h1>
+
+    <p class="hero-sub fade-up">
+      Every translation runs through three AI philosophers before it ships.
+      Not for style points —<br>because one wrong word in Germany can cost you
+      a deal, a brand, or a compliance review.
+    </p>
+
+    <div class="hero-ctas fade-up">
+      <a href="#panel" class="btn btn-g">[ SEE HOW IT WORKS ]</a>
+      <a href="https://github.com/nicogarazzo/Interpretation-AI-Cell" target="_blank" class="btn btn-w">[ GITHUB // OPEN SOURCE ↗ ]</a>
+    </div>
+
+    <div style="margin-top:52px;" class="fade-up">
+      <div class="readout">
+        <div><span class="rk">PIPELINE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>EN → DE // MULTI-AGENT CONSENSUS</div>
+        <div><span class="rk">RUNTIME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>HERMES AGENT // NOUS RESEARCH</div>
+        <div><span class="rk">LAYER 1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>WITTGENSTEIN + QUINE + FREGE // TRANSLATION CRITICS</div>
+        <div><span class="rk">LAYER 2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>KOEHN + CHO + VASWANI // PIPELINE SCIENTISTS</div>
+        <div><span class="rk">MEMORY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>PERSISTENT // CELL EVOLVES WITH EVERY RUN <span class="glow-g">■</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="hr"><div class="hr-line"></div><div class="hr-text">// 01 // SCENE //</div><div class="hr-line"></div></div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     01 — SCENE / STAKES
+     Proposition: The German market punishes meaning loss in ways
+     that are invisible until it's too late.
+═══════════════════════════════════════════════════════════════ -->
+<section id="scene">
+  <div class="wrap">
+    <span class="sys-label fade-up">// 01 — THE STAKES</span>
+    <h2 class="fade-up">German-speaking buyers read differently.<br>They hear what you didn't say.</h2>
+
+    <p class="fade-up">German B2B culture is precise by default. Register matters. Formality is information. A sentence that sounds confident in English can sound arrogant, casual, or simply wrong in German — and the reader will notice before you do.</p>
+    <p class="fade-up">This isn't a linguistic quirk. It's a trust signal. And trust, in B2B sales, is the product.</p>
+
+    <div class="stakes-grid fade-up">
+      <div class="stake-item">
+        <div class="stake-code">SCENARIO // 01</div>
+        <div class="stake-title">You're launching into DACH.</div>
+        <p>The first six months set the perception. A tone-deaf headline in a landing page doesn't just underperform — it teaches your market who you are before you get a chance to.</p>
+      </div>
+      <div class="stake-item">
+        <div class="stake-code">SCENARIO // 02</div>
+        <div class="stake-title">You're translating a case study.</div>
+        <p>Numbers travel. Narrative doesn't. The sentence that built trust in English can read as boastful in German. Your best proof point becomes your weakest argument.</p>
+      </div>
+      <div class="stake-item">
+        <div class="stake-code">SCENARIO // 03</div>
+        <div class="stake-title">You're sending a proposal.</div>
+        <p>One wrong register — Sie vs. du, Konjunktiv II vs. imperative — and a formal offer reads like a casual email. The deal doesn't close. Nobody tells you why.</p>
+      </div>
+      <div class="stake-item">
+        <div class="stake-code">SCENARIO // 04</div>
+        <div class="stake-title">You're translating compliance content.</div>
+        <p>"Close enough" is a legal risk. Ambiguity that was harmless in English becomes liability in German when a reader interprets it the wrong way — and they will.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="hr"><div class="hr-line"></div><div class="hr-text">// 02 // THE FAILURE //</div><div class="hr-line"></div></div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     02 — THE FAILURE
+     Proposition: The failure mode is meaning loss, not word error.
+     This is a different problem than you thought.
+═══════════════════════════════════════════════════════════════ -->
+<section id="failure">
+  <div class="wrap">
+    <span class="sys-label fade-up">// 02 — THE FAILURE MODE</span>
+    <h2 class="fade-up">Translation isn't wrong.<br>It's just incomplete.</h2>
+
+    <div class="fade-up">
+      <p>Your German translation is technically accurate. The words are correct. The grammar is clean. The spell-checker is happy.</p>
+      <p>But something is off.</p>
+
+      <div class="failure-quote">
+        The urgency didn't land. The authority dissolved. The sentence that should have felt like a commitment reads like a suggestion.
+      </div>
+
+      <p>Your German-speaking buyer didn't respond. You don't know why. Your translator doesn't either.</p>
+      <p>Most translation failures aren't errors. They're losses of <em>meaning</em>. A phrase that carries weight in English can arrive in German stripped of everything that made it matter. The register shifts. The implication disappears. The ambiguity that was a feature becomes a flaw.</p>
+      <p>You hired a translator. They did their job. And you still ended up with a version of your message that sounds like it was written by someone who doesn't quite believe it.</p>
+      <p><strong>That's not a typo problem. That's a judgment problem.</strong></p>
+    </div>
+  </div>
+</section>
+
+<div class="hr"><div class="hr-line"></div><div class="hr-text">// 03 // ROOT CAUSE //</div><div class="hr-line"></div></div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     03 — ROOT CAUSE
+     Proposition: Judgment fails without a counterargument.
+     Single-voice AI has no one to disagree with it.
+═══════════════════════════════════════════════════════════════ -->
+<section id="rootcause">
+  <div class="wrap">
+    <span class="sys-label fade-up">// 03 — ROOT CAUSE</span>
+    <h2 class="fade-up">Every tool gives you one answer.<br>No one argues back.</h2>
+
+    <div class="fade-up">
+      <p>The problem isn't AI translation. The problem is <em>single-agent</em> translation. One model, one output, one perspective — with no mechanism to catch its own blind spots.</p>
+      <p>Socrates understood this in 400 BC. Truth doesn't emerge from monologue. It emerges from deliberation — from productive disagreement between perspectives that don't share the same assumptions.</p>
+      <p><strong>That's not a philosophy class observation. That's the most reliable quality-assurance method ever invented.</strong> And it's exactly what every current translation tool is missing.</p>
+    </div>
+
+    <div class="terminal fade-up">
+      <div class="t-bar">
+        <span class="td td-r"></span><span class="td td-y"></span><span class="td td-g"></span>
+        <span class="t-title-bar">INQUIRY_PROTOCOL.SH // SOCRATIC METHOD APPLIED</span>
+      </div>
+      <div class="t-body">
+        <div class="tg">query: "is this translated?"</div>
+        <div class="tc">// single-agent response. no counterargument. confidence: 0.91. shipped.</div>
+        <div class="tb"></div>
+        <div class="ta">query: "has this been tested?"</div>
+        <div class="tc">// three agents. three axes. mandatory disagreement before output advances.</div>
+        <div class="tc">// consensus required. conflicts logged. reasons visible.</div>
+        <div class="tb"></div>
+        <div class="tr">What if every translation had to survive a philosophical argument?</div>
+        <div class="tb"></div>
+        <div class="tg">solution: <span class="glow-g">INTERPRETATION AI CELL</span><span class="cursor">_</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="hr"><div class="hr-line"></div><div class="hr-text">// 04 // THE PANEL //</div><div class="hr-line"></div></div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     04 — THE PANEL
+     Proposition: Three philosophers, three axes, one consensus gate.
+     Each catches what the others miss.
+═══════════════════════════════════════════════════════════════ -->
+<section id="panel">
+  <div class="wrap-wide">
+    <div class="wrap">
+      <span class="sys-label fade-up">// 04 — THE PANEL</span>
+      <h2 class="fade-up">Three philosophers walk<br>into your pipeline.</h2>
+    </div>
+
+    <div class="philosophers fade-up">
+      <div class="philo-card pw">
+        <div class="p-id">AGENT_001 // CRITIC LAYER</div>
+        <span class="p-glyph">Ψ</span>
+        <div class="p-name">Wittgenstein</div>
+        <div class="p-jp">ウィトゲンシュタイン</div>
+        <div class="p-axis">Pragmatics & Context</div>
+        <p class="p-body">Wittgenstein doesn't care if the words are accurate. He cares if the translation <em>does the same thing</em> as the original. A sentence that closes in English — does it close in German? Does it command, or request? He catches translations that are technically correct and functionally broken.</p>
+        <div class="p-status">STATUS: <span class="glow-g">ACTIVE</span> &nbsp;·&nbsp; WEIGHT: 1.5× IDIOMS</div>
+      </div>
+      <div class="philo-card pq">
+        <div class="p-id">AGENT_002 // CRITIC LAYER</div>
+        <span class="p-glyph">Ω</span>
+        <div class="p-name">Quine</div>
+        <div class="p-jp">クワイン</div>
+        <div class="p-axis">Ambiguity & Indeterminacy</div>
+        <p class="p-body">Quine is suspicious of resolution. Some ambiguity is intentional. Some phrases are open because closing them would be a mistake. Quine catches when a translation resolves something that should have stayed open — and when deliberate tension collapses into false clarity. He's the agent most translators never had.</p>
+        <div class="p-status">STATUS: <span class="glow-c">ACTIVE</span> &nbsp;·&nbsp; WEIGHT: 1.5× AMBIGUITY</div>
+      </div>
+      <div class="philo-card pf">
+        <div class="p-id">AGENT_003 // CRITIC LAYER</div>
+        <span class="p-glyph">Φ</span>
+        <div class="p-name">Frege</div>
+        <div class="p-jp">フレーゲ</div>
+        <div class="p-axis">Sense, Reference & Register</div>
+        <p class="p-body">Frege asks: did the tone survive? Not just the meaning — the <em>register</em>. The formality level. The weight of the sentence. Whether you're speaking to a manufacturing director or a startup PM — Frege notices if that distinction got lost. He also catches the words that mean something very different in German than you think they do.</p>
+        <div class="p-status">STATUS: <span class="glow-a">ACTIVE</span> &nbsp;·&nbsp; WEIGHT: 1.5× REGISTER</div>
+      </div>
+    </div>
+
+    <!-- CONSENSUS -->
+    <div class="gate fade-up">
+      <div class="gate-head">── CONSENSUS GATE // MANDATORY ──</div>
+      <div class="gate-flow">
+        <div class="gn gn-g">WITTGENSTEIN</div><div class="g-sep">+</div>
+        <div class="gn gn-c">QUINE</div><div class="g-sep">+</div>
+        <div class="gn gn-a">FREGE</div><div class="g-sep">→</div>
+        <div class="gn gn-p">CONSENSUS</div><div class="g-sep">→</div>
+        <div class="gn" style="color:var(--text-bright);border-color:var(--wire);">APPROVED</div>
+      </div>
+      <p>None of the three can approve alone. All three reach consensus — or the translation doesn't advance. The disagreement is surfaced. The conflict is logged. You see <em>why</em> it failed, not just <em>that</em> it failed.<br><br><strong>Not AI confidence. AI deliberation.</strong></p>
+    </div>
+
+    <!-- FÜHRER CASE -->
+    <div class="case fade-up">
+      <div class="case-head">
+        <span class="case-label">⚠ INTERCEPTED // FREGE BLOCK</span>
+        <span class="case-meta">RUN: 2026-05-31_003 · CLIENT: [REDACTED] · SEG: 005</span>
+      </div>
+      <div class="case-body">
+        <h3>The word that would have ended a campaign.</h3>
+        <p>In a recent run for a client campaign, the AI translator produced a headline for an industrial product page. The English original: <strong style="color:#ffaaaa">"Leader in Wiping Innovation."</strong></p>
+        <p style="margin-top:12px;">The first translation was:</p>
+        <div class="cmp">
+          <div class="cmp-bad">
+            <div class="cmp-lbl"><span>✕</span> FIRST DRAFT — BLOCKED BY FREGE</div>
+            <div class="cmp-txt">"Führer bei Wischinnovationen"</div>
+          </div>
+          <div class="cmp-good">
+            <div class="cmp-lbl"><span>✓</span> APPROVED TRANSLATION</div>
+            <div class="cmp-txt">"Führend in der Wischtechnologie"</div>
+          </div>
+        </div>
+        <div class="frege-note"><strong>FREGE VERDICT //</strong> "'Führer' carries strong historical connotations completely absent from the English source. The translation would create a deeply inappropriate association for any German reader. Corrected to 'Führend in der Wischtechnologie' — preserving the leadership claim without the historical weight." — confidence: 0.85</div>
+        <p class="case-result"><strong style="color:#ff7070">Wittgenstein approved. Quine approved. Frege blocked it.</strong> That's the point. One translator — human or AI — might have shipped it. The panel didn't.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="hr"><div class="hr-line"></div><div class="hr-text">// 05 // SCIENTISTS //</div><div class="hr-line"></div></div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     05 — SCIENTISTS
+     Proposition: After the philosophers approve, three scientists
+     audit the pipeline itself — not the translation, the system.
+═══════════════════════════════════════════════════════════════ -->
+<section id="scientists">
+  <div class="wrap-wide">
+    <div class="wrap">
+      <span class="sys-label fade-up">// 05 — THE SCIENTISTS</span>
+      <h2 class="fade-up">After consensus, three scientists<br>audit the cell itself.</h2>
+      <p class="fade-up">The philosopher panel catches translation failures. But who watches the watchers? Three scientist agents run asynchronously after every approved run — not to review the translation, but to audit the <em>pipeline</em>. They look for drift, regression, and incoherence at the system level.</p>
+    </div>
+
+    <div class="scientists-grid fade-up">
+      <div class="sci-card sk">
+        <div class="s-id">SCIENTIST_001 // AUDIT LAYER</div>
+        <span class="s-glyph">∂</span>
+        <div class="s-name">Koehn</div>
+        <div class="s-jp">ケーン</div>
+        <div class="s-axis">Drift Detection & Skill Regression</div>
+        <p class="s-body">Koehn reads every git diff. He tracks whether translation quality is improving or drifting — run over run. If a skill that worked in run #001 starts degrading in run #020, Koehn raises a flag before a client sees the output.</p>
+        <div class="s-status">STATUS: <span class="glow-v">ASYNC</span> &nbsp;·&nbsp; TRIGGER: POST-CONSENSUS</div>
+      </div>
+      <div class="sci-card sc">
+        <div class="s-id">SCIENTIST_002 // AUDIT LAYER</div>
+        <span class="s-glyph">∑</span>
+        <div class="s-name">Cho</div>
+        <div class="s-jp">チョ</div>
+        <div class="s-axis">Memory Integrity & Cross-Agent Coherence</div>
+        <p class="s-body">Cho audits the cell's memory state. Are the three philosopher agents still coherent with each other? Is the glossary consistent? Has a human reviewer correction in run #015 been properly absorbed by all agents — or did one of them miss it?</p>
+        <div class="s-status">STATUS: <span class="glow-v">ASYNC</span> &nbsp;·&nbsp; TRIGGER: POST-CONSENSUS</div>
+      </div>
+      <div class="sci-card sv">
+        <div class="s-id">SCIENTIST_003 // AUDIT LAYER</div>
+        <span class="s-glyph">∫</span>
+        <div class="s-name">Vaswani</div>
+        <div class="s-jp">ヴァスワニ</div>
+        <div class="s-axis">Context Optimization & Identity Drift</div>
+        <p class="s-body">Vaswani watches for identity drift — the subtle way an agent's behavior shifts over many runs until it's no longer doing what it was designed to do. He prunes context, optimizes prompts, and ensures the cell's character stays sharp.</p>
+        <div class="s-status">STATUS: <span class="glow-v">ASYNC</span> &nbsp;·&nbsp; TRIGGER: POST-CONSENSUS</div>
+      </div>
+    </div>
+
+    <div class="audit-flow fade-up">
+      <div class="audit-title">── FULL PIPELINE // TWO LAYERS ──</div>
+      <div class="audit-pipeline">
+        <div class="an an-pass">TRANSLATOR</div><div class="g-sep">→</div>
+        <div class="an gn-g">WITTGENSTEIN</div><div class="g-sep">+</div>
+        <div class="an gn-c">QUINE</div><div class="g-sep">+</div>
+        <div class="an gn-a">FREGE</div><div class="g-sep">→</div>
+        <div class="an an-pass">APPROVED</div><div class="g-sep">→</div>
+        <div class="an an-sci">KOEHN + CHO + VASWANI</div>
+      </div>
+      <p class="audit-body">The philosophers review the translation. The scientists review the pipeline. Both layers run on every approved output — silently, asynchronously, without blocking the human reviewer.</p>
+    </div>
+
+  </div>
+</section>
+
+<div class="hr"><div class="hr-line"></div><div class="hr-text">// 06 // EVOLUTION //</div><div class="hr-line"></div></div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     06 — EVOLUTION / HERMES MEMORY
+     Proposition: The cell learns. Every run teaches it.
+     Human feedback closes the loop. It gets better over time.
+═══════════════════════════════════════════════════════════════ -->
+<section id="evolution">
+  <div class="wrap">
+    <span class="sys-label fade-up">// 06 — THE CELL EVOLVES</span>
+    <h2 class="fade-up">Every run teaches the system.<br>The cell gets harder to fool.</h2>
+
+    <p class="fade-up">Most translation tools are static. You get the same model on day one and day one thousand. Interpretation AI Cell is different — it's built on Hermes Agent, a framework designed for persistent, evolving multi-agent systems. The cell doesn't just process translations. <em>It remembers them.</em></p>
+
+    <div class="loop-diagram fade-up">
+      <div class="loop-node">
+        <div class="ln-num">STEP // 01</div>
+        <div class="ln-title">Run completes</div>
+        <p>Translator produces. Philosophers review. Scientists audit. Every decision — verdicts, confidence scores, corrections, conflicts — is logged to the run corpus.</p>
+      </div>
+      <div class="loop-node">
+        <div class="ln-num">STEP // 02</div>
+        <div class="ln-title">Human reviewer responds</div>
+        <p>The client reviewer reads the bilingual review sheet. They approve, correct, or override. Their feedback is structured — not a comment in a document, but an input to the system.</p>
+      </div>
+      <div class="loop-node">
+        <div class="ln-num">STEP // 03</div>
+        <div class="ln-title">Memory updates</div>
+        <p>Approved corrections feed back into the glossary. Cho audits coherence across all agents. Patterns that the reviewer keeps correcting become rules the agents follow from now on.</p>
+      </div>
+      <div class="loop-node">
+        <div class="ln-num">STEP // 04</div>
+        <div class="ln-title">Next run is better</div>
+        <p>The same mistake doesn't happen twice. Koehn tracks regression. Vaswani keeps the agents sharp. The cell doesn't plateau — it compounds.</p>
+      </div>
+    </div>
+
+    <div class="memory-bar fade-up">
+      <div class="mb-head">// HERMES MEMORY STATE // LIVE</div>
+      <div class="mb-row">
+        <span class="mb-k">GLOSSARY ENTRIES</span>
+        <span class="mb-v">41 approved terms · 3 added this run</span>
+        <span class="mb-status">CURRENT ■</span>
+      </div>
+      <div class="mb-row">
+        <span class="mb-k">RUNS COMPLETED</span>
+        <span class="mb-v">3 runs · 41 segments · client: [active]</span>
+        <span class="mb-status">LOGGED ■</span>
+      </div>
+      <div class="mb-row">
+        <span class="mb-k">HUMAN CORRECTIONS</span>
+        <span class="mb-v">Absorbed into agent profiles via Cho audit</span>
+        <span class="mb-status">SYNCED ■</span>
+      </div>
+      <div class="mb-row">
+        <span class="mb-k">DRIFT STATUS</span>
+        <span class="mb-v">Koehn: no regression detected across 3 runs</span>
+        <span class="mb-status">STABLE ■</span>
+      </div>
+      <div class="mb-row">
+        <span class="mb-k">NEXT AUDIT</span>
+        <span class="mb-v">Triggered automatically post next consensus</span>
+        <span class="mb-status">ARMED ■</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="hr"><div class="hr-line"></div><div class="hr-text">// 07 // OPEN SOURCE //</div><div class="hr-line"></div></div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     07 — OPEN SOURCE
+     Proposition: Trustworthy translation should be a public standard,
+     not a proprietary product. The method is the point.
+═══════════════════════════════════════════════════════════════ -->
+<section id="oss">
+  <div class="wrap">
+    <span class="sys-label fade-up">// 07 — THE MISSION</span>
+    <h2 class="fade-up">Trustworthy translation<br>shouldn't be a trade secret.<br>It should be a standard.</h2>
+
+    <div class="fade-up">
+      <p>Everything is public. The architecture. The philosopher prompts. The scientist audit logic. The consensus rules. The decisions we made and the reasoning behind them.</p>
+      <p><strong>If your translation pipeline can't be audited, it can't be trusted.</strong> You can read every prompt. Run the cell yourself. Fork it, challenge it, build something better. If you disagree with how we modeled Quine's indeterminacy principle — open an issue and make the argument. That's the point.</p>
+    </div>
+
+    <div class="oss-grid fade-up">
+      <div class="oss-item">
+        <div class="oss-num">// 01</div>
+        <div class="oss-title">Every prompt is readable</div>
+        <p>The SOUL.md files — the full personality and evaluation logic of all six agents — are in the repo. No black box.</p>
+      </div>
+      <div class="oss-item">
+        <div class="oss-num">// 02</div>
+        <div class="oss-title">Every decision is logged</div>
+        <p>Each run stores the full output: critic verdicts, scientist audits, confidence scores, conflicts, and corrections. Nothing hidden.</p>
+      </div>
+      <div class="oss-item">
+        <div class="oss-num">// 03</div>
+        <div class="oss-title">Fork it. Break it. Improve it.</div>
+        <p>Add a fourth philosopher. Change the consensus rules. Run it on Spanish or Japanese. The architecture supports it. It's yours.</p>
+      </div>
+      <div class="oss-item">
+        <div class="oss-num">// 04</div>
+        <div class="oss-title">Built on open infrastructure</div>
+        <p>Runs on Hermes Agent by Nous Research. The pipeline, the Kanban workers, the memory system — all open source, all auditable.</p>
+      </div>
+    </div>
+
+    <p class="fade-up" style="margin-top:36px; font-style:italic; color:var(--wire-bright); font-size:12px; letter-spacing:1px;">We're not selling certainty. We're building toward it, in public.</p>
+  </div>
+</section>
+
+<div class="hr"><div class="hr-line"></div><div class="hr-text">// 08 // CLOSING //</div><div class="hr-line"></div></div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     08 — CLOSING / INVITATION
+     Proposition: Act now — the next translation is leaving
+     without any of this.
+═══════════════════════════════════════════════════════════════ -->
+<section id="closing">
+  <div class="wrap">
+    <div class="closing-wrap">
+      <span class="closing-glyph">Φ &nbsp; Ψ &nbsp; Ω &nbsp; ∂ &nbsp; ∑ &nbsp; ∫</span>
+      <span class="sys-label fade-up">// 08 — BEFORE YOU SHIP THE NEXT ONE</span>
+      <h2 class="fade-up">One more translation is going<br>to leave without a second opinion.</h2>
+
+      <div class="fade-up">
+        <p>Maybe it'll be fine.</p>
+        <p>Or maybe it's the one that makes your German prospect raise an eyebrow and decide not to reply. You won't know. You never do.</p>
+        <p>Interpretation AI Cell doesn't promise perfect translations. No one can — and anyone who does is selling you confidence, not quality.</p>
+        <p style="color:var(--green); text-shadow:0 0 8px var(--green);"><strong>What it does: runs every translation through six agents across two layers, surfaces every disagreement, and only advances the versions that survived a philosophical argument and a scientific audit.</strong></p>
+        <p style="font-family:var(--serif); font-size:19px; font-style:italic; color:var(--paper-dim); margin-top:24px;">That's not a guarantee. That's a standard.</p>
+      </div>
+
+      <div class="closing-ctas fade-up">
+        <a href="https://github.com/nicogarazzo/Interpretation-AI-Cell" target="_blank" class="btn btn-g">[ READ THE ARCHITECTURE ]</a>
+        <a href="https://github.com/nicogarazzo/Interpretation-AI-Cell" target="_blank" class="btn btn-w">[ RUN IT YOURSELF ↗ ]</a>
+      </div>
+      <p class="closing-note fade-up">
+        NO WAITLIST &nbsp;·&nbsp; NO PRICING PAGE &nbsp;·&nbsp; NO DEMO CALL<br>
+        JUST A PIPELINE YOU CAN UNDERSTAND<span class="cursor">_</span>
+      </p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-id">INTERPRETATION AI CELL // FILE #001 // OPEN SOURCE // 2026</div>
+    <div class="footer-links">
+      <a href="https://github.com/nicogarazzo/Interpretation-AI-Cell" target="_blank">GITHUB ↗</a>
+      <a href="https://github.com/NousResearch" target="_blank">HERMES / NOUS ↗</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Scroll fade-in
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.07, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.fade-up').forEach(el => obs.observe(el));
+
+// Stagger cards
+['philo-card','sci-card','stake-item','oss-item','loop-node'].forEach(cls => {
+  document.querySelectorAll('.'+cls).forEach((c,i) => { c.style.transitionDelay = `${i*80}ms`; });
+});
+
+// Phosphor flicker
+function flicker() {
+  const els = document.querySelectorAll('.glow-g,.glow-a,.glow-c,.glow-v');
+  const el = els[Math.floor(Math.random()*els.length)];
+  if (el) { el.style.opacity='0.4'; setTimeout(()=>el.style.opacity='',70); }
+  setTimeout(flicker, Math.random()*7000+4000);
+}
+flicker();
+</script>
+
+</body>
+</html>

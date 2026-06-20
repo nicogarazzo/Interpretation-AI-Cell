@@ -1,0 +1,78 @@
+# Translation Run Manifest — Template
+# Copy this directory to corpus/runs/<run_id>/ to start a new run
+# Run ID format: YYYY-MM-DD_NNN (e.g., 2026-05-30_001)
+
+run_id: ""                          # Auto-filled on creation
+created_at: ""                      # ISO 8601 timestamp
+status: "pending"                   # pending | in_progress | review | approved | failed
+
+# Source document
+source:
+  file: ""                          # Original file path or reference
+  client: ""                         # Client identifier (e.g., "example-client")
+  campaign: ""                      # Campaign name
+  content_type: ""                  # linkedin_ad | infographic | case_study | landing_page | email
+  funnel_stage: ""                  # awareness | consideration | conversion
+  language: "en"                    # Source language
+
+# Translation target
+target:
+  language: "de"                    # Target language
+  register: "business-formal"       # Register classification
+
+# Segment count
+segments:
+  total: 0
+  translated: 0
+  approved: 0
+  blocked: 0
+
+# Agent activity log (updated by each agent)
+agent_activity:
+  translator:
+    started_at: ""
+    completed_at: ""
+    model_used: ""                  # depends on environment (see shared/environment.yml)
+    tokens_used: 0
+  wittgenstein:
+    started_at: ""
+    completed_at: ""
+    verdict: ""                     # approve | revise | block
+    issues_count: 0
+  quine:
+    started_at: ""
+    completed_at: ""
+    verdict: ""
+    issues_count: 0
+  frege:
+    started_at: ""
+    completed_at: ""
+    verdict: ""
+    issues_count: 0
+  consensus:
+    result: ""                      # approved | revised | blocked | escalated
+    rounds: 0
+    escalated_to_human: false
+
+# Scientist audits (async, post-merge)
+audits:
+  koehn:
+    triggered_at: ""
+    result: ""                      # pass | warn | block
+    findings_count: 0
+  cho:
+    triggered_at: ""
+    result: ""
+    findings_count: 0
+  vaswani:
+    triggered_at: ""
+    result: ""
+    actions_count: 0
+
+# Human review (if escalated)
+human_review:
+  required: false
+  reviewer: ""
+  reviewed_at: ""
+  decision: ""                      # approved | revised | rejected
+  notes: ""

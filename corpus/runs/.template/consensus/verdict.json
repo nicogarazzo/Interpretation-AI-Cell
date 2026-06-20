@@ -1,0 +1,23 @@
+{
+  "_schema": "interpretation-ai-cell/consensus-verdict/v1",
+  "run_id": "",
+  "timestamp": "",
+  "strategy": "weighted",
+  "quorum_met": true,
+  "round": 1,
+  "verdicts": [
+    {
+      "segment_id": "seg_001",
+      "result": "",
+      "votes": {
+        "wittgenstein": { "verdict": "", "confidence": 0.0, "weight": 0.0, "weighted_score": 0.0 },
+        "quine": { "verdict": "", "confidence": 0.0, "weight": 0.0, "weighted_score": 0.0 },
+        "frege": { "verdict": "", "confidence": 0.0, "weight": 0.0, "weighted_score": 0.0 }
+      },
+      "dominant_category": "",
+      "merged_issues": [],
+      "revision_instructions": "",
+      "escalated": false
+    }
+  ]
+}

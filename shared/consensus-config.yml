@@ -1,0 +1,77 @@
+# Interpretation AI Cell — Philosopher Consensus Configuration
+# Governs the voting protocol for the 3-philosopher review panel
+
+consensus:
+  # ── Voting Rules ──────────────────────────────────────────────
+  quorum: 3                             # All 3 philosophers must respond
+  approval_threshold: 2                 # 2-of-3 approve = translation passes
+  strategy: weighted                    # weighted | majority | unanimous
+
+  verdicts:
+    - approve                           # Translation is acceptable
+    - revise                            # Translation needs changes (revision loop)
+    - block                             # Translation would cause misunderstanding
+
+  # ── Per-Category Weights ──────────────────────────────────────
+  # Each philosopher has domain expertise. Their vote carries more
+  # weight in their specialty area. Default weight = 1.0 for all.
+  weights:
+    idiom_resolution:
+      wittgenstein: 1.5                 # Domain expert on idioms
+      quine: 1.0
+      frege: 0.8
+
+    tone_and_style:
+      wittgenstein: 0.8
+      quine: 0.8
+      frege: 1.5                        # Domain expert on tone/register
+
+    ambiguity:
+      wittgenstein: 1.0
+      quine: 1.5                        # Domain expert on ambiguity
+      frege: 1.0
+
+    factual_accuracy:
+      wittgenstein: 1.0
+      quine: 1.0
+      frege: 1.5                        # Bedeutung errors are Frege's domain
+
+    pragmatics:
+      wittgenstein: 1.5                 # Domain expert on pragmatics
+      quine: 1.0
+      frege: 0.8
+
+  # ── Tie Breaking ──────────────────────────────────────────────
+  tie_breaking: most_conservative       # If tied, pick the most restrictive verdict
+                                        # approve < revise < block
+
+  # ── Timing ────────────────────────────────────────────────────
+  timeout_per_agent_seconds: 30         # Max time for each philosopher to respond
+  max_rounds: 3                         # Max revision loops before escalation
+  cooldown_between_rounds_seconds: 2    # Brief pause between revision rounds
+
+  # ── Escalation ────────────────────────────────────────────────
+  escalation:
+    after_max_rounds: create_kanban_task # Create a human-review task
+    on_unanimous_block: create_kanban_task
+    on_timeout: proceed_with_available   # If 1 agent times out, use 2-of-2
+    on_all_timeout: create_kanban_task   # If all agents time out, escalate
+
+    human_review:
+      kanban_label: "human-review-required"
+      include_in_task:
+        - source_text
+        - all_draft_translations
+        - all_philosopher_critiques
+        - recommended_action
+      human_commands:
+        approve: "/approve <translation>"   # Accept a specific version
+        override: "/override <text>"        # Provide manual translation
+        skip: "/skip"                       # Skip this translation unit
+
+  # ── Safety ────────────────────────────────────────────────────
+  safety:
+    max_consecutive_blocks: 2           # If 2 TUs in a row are blocked after max_rounds,
+                                        # pause the dispatcher and alert
+    max_tokens_per_translation: 50000   # Total token budget across all agents per TU
+    max_wall_clock_seconds: 120         # 2-minute hard timeout per TU

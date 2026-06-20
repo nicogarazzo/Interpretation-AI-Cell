@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hermes Agent — Architecture Playbook</title>
+<style>
+  /* ── Design System ──────────────────────────────────────────── */
+  :root {
+    --purple: #8c4aec;
+    --purple-glow: rgba(140, 74, 236, 0.18);
+    --purple-border: rgba(140, 74, 236, 0.35);
+    --black: #0a0a0a;
+    --dark: #141414;
+    --card: #1c1c1c;
+    --white: #fefefe;
+    --gray: #2e2e2e;
+    --gray-mid: #555;
+    --gray-light: #888;
+    --text: #e8e8e8;
+    --text-dim: #888;
+    --radius: 14px;
+    --radius-sm: 9px;
+    --ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --green: #34d399;
+    --amber: #fbbf24;
+    --red: #f87171;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    background: var(--black);
+    color: var(--text);
+    line-height: 1.65;
+    font-size: 15px;
+  }
+
+  /* ── Header ─────────────────────────────────────────────────── */
+  header {
+    text-align: center;
+    padding: 60px 24px 48px;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: -80px; left: 50%; transform: translateX(-50%);
+    width: 600px; height: 400px;
+    background: radial-gradient(ellipse, rgba(140,74,236,0.22) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--purple-border), transparent);
+  }
+  .logo-badge {
+    display: inline-block;
+    background: var(--card);
+    border: 1px solid var(--gray);
+    border-radius: 100px;
+    padding: 6px 18px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gray-light);
+    margin-bottom: 20px;
+    position: relative;
+  }
+  header h1 {
+    font-size: 38px;
+    font-weight: 200;
+    color: var(--white);
+    margin-bottom: 12px;
+    position: relative;
+  }
+  header h1 strong { font-weight: 700; }
+  header h1 em { font-style: normal; color: var(--purple); font-weight: 600; }
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 16px;
+    max-width: 640px;
+    margin: 0 auto 24px;
+    position: relative;
+  }
+  .version-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--card);
+    border: 1px solid var(--gray);
+    border-radius: 100px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: var(--text-dim);
+    position: relative;
+  }
+  .version-badge .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+  }
+
+  /* ── Layout ─────────────────────────────────────────────────── */
+  .container { max-width: 920px; margin: 0 auto; padding: 0 24px; }
+
+  /* ── Table of Contents ──────────────────────────────────────── */
+  .toc {
+    background: var(--card);
+    border: 1.5px solid var(--gray);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    margin: 40px 0;
+  }
+  .toc h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--gray-light);
+    margin-bottom: 16px;
+  }
+  .toc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 32px;
+  }
+  .toc a {
+    color: var(--text);
+    text-decoration: none;
+    font-size: 14px;
+    padding: 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: color 0.2s var(--ease);
+  }
+  .toc a:hover { color: var(--purple); }
+  .toc .num {
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    background: var(--gray);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+
+  /* ── Sections ───────────────────────────────────────────────── */
+  section {
+    background: var(--card);
+    border: 1.5px solid var(--gray);
+    border-radius: var(--radius);
+    padding: 32px;
+    margin: 24px 0;
+    transition: border-color 0.3s var(--ease);
+  }
+  section:hover { border-color: var(--purple-border); }
+
+  h2 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  h2 .section-num {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: var(--purple);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--white);
+    flex-shrink: 0;
+  }
+  .section-desc {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin-bottom: 20px;
+    padding-left: 42px;
+  }
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--white);
+    margin: 24px 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--gray);
+  }
+
+  h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--purple);
+    margin: 18px 0 8px;
+  }
+
+  p { margin-bottom: 12px; }
+
+  /* ── Code blocks ────────────────────────────────────────────── */
+  pre {
+    background: var(--black);
+    border: 1px solid var(--gray);
+    border-radius: var(--radius-sm);
+    padding: 16px 20px;
+    overflow-x: auto;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    margin: 12px 0 16px;
+    color: var(--text);
+  }
+  code {
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 13px;
+    background: rgba(140, 74, 236, 0.1);
+    border: 1px solid rgba(140, 74, 236, 0.2);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: #c4a5f0;
+  }
+  pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
+  }
+  .comment { color: #6a737d; }
+  .keyword { color: var(--purple); }
+  .string { color: var(--green); }
+  .accent { color: var(--amber); }
+
+  /* ── Tables ─────────────────────────────────────────────────── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 16px;
+    font-size: 13px;
+  }
+  th {
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--black);
+    color: var(--gray-light);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--gray);
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(46,46,46,0.5);
+    vertical-align: top;
+  }
+  tr:hover td { background: rgba(140, 74, 236, 0.04); }
+
+  /* ── Callouts ───────────────────────────────────────────────── */
+  .callout {
+    border-radius: var(--radius-sm);
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .callout-rule {
+    background: rgba(140, 74, 236, 0.08);
+    border-left: 3px solid var(--purple);
+  }
+  .callout-warn {
+    background: rgba(251, 191, 36, 0.08);
+    border-left: 3px solid var(--amber);
+  }
+  .callout-gotcha {
+    background: rgba(248, 113, 113, 0.08);
+    border-left: 3px solid var(--red);
+  }
+  .callout-tip {
+    background: rgba(52, 211, 153, 0.08);
+    border-left: 3px solid var(--green);
+  }
+  .callout strong { color: var(--white); }
+
+  /* ── Tags / Badges ──────────────────────────────────────────── */
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .tag-purple { background: rgba(140,74,236,0.2); color: #c4a5f0; }
+  .tag-green { background: rgba(52,211,153,0.2); color: var(--green); }
+  .tag-amber { background: rgba(251,191,36,0.2); color: var(--amber); }
+  .tag-red { background: rgba(248,113,113,0.2); color: var(--red); }
+
+  /* ── Checklist ──────────────────────────────────────────────── */
+  .checklist { list-style: none; padding: 0; }
+  .checklist li {
+    padding: 8px 0 8px 28px;
+    position: relative;
+    border-bottom: 1px solid rgba(46,46,46,0.3);
+  }
+  .checklist li::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 10px;
+    width: 16px; height: 16px;
+    border-radius: 4px;
+    border: 1.5px solid var(--gray);
+    background: var(--black);
+  }
+
+  /* ── Diagram box ────────────────────────────────────────────── */
+  .diagram {
+    background: var(--black);
+    border: 1px solid var(--gray);
+    border-radius: var(--radius-sm);
+    padding: 24px;
+    margin: 16px 0;
+    text-align: center;
+    font-family: 'SF Mono', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    white-space: pre;
+    overflow-x: auto;
+    color: var(--text-dim);
+  }
+  .diagram .highlight { color: var(--purple); font-weight: 600; }
+  .diagram .g { color: var(--green); }
+  .diagram .a { color: var(--amber); }
+
+  /* ── Footer ─────────────────────────────────────────────────── */
+  footer {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-dim);
+    font-size: 13px;
+    border-top: 1px solid var(--gray);
+    margin-top: 48px;
+  }
+  footer strong { color: var(--text); }
+
+  /* ── Responsive ─────────────────────────────────────────────── */
+  @media (max-width: 640px) {
+    header h1 { font-size: 28px; }
+    .toc-grid { grid-template-columns: 1fr; }
+    section { padding: 20px; }
+    pre { font-size: 12px; padding: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-badge">Nicolas Calderon &middot; AI Agent Architecture</div>
+  <h1><strong>Hermes Agent</strong> <em>Playbook</em></h1>
+  <p class="subtitle">Patrones de arquitectura, decisiones de diseno y mejores practicas para construir sistemas multi-agente con Hermes Agent (Nous Research). Extraido del proyecto Interpretation AI Cell.</p>
+  <div class="version-badge"><span class="dot"></span> Hermes Agent v0.15+ &middot; Mayo 2026</div>
+</header>
+
+<div class="container">
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- TABLE OF CONTENTS                                               -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<nav class="toc">
+  <h2>Contenido</h2>
+  <div class="toc-grid">
+    <a href="#s1"><span class="num">1</span> Aislamiento con HERMES_HOME</a>
+    <a href="#s2"><span class="num">2</span> Anatomia de un Profile</a>
+    <a href="#s3"><span class="num">3</span> SOUL.md — Identidad del Agente</a>
+    <a href="#s4"><span class="num">4</span> Skills — Procedimientos Aprendidos</a>
+    <a href="#s5"><span class="num">5</span> Kanban — Orquestacion Multi-Agente</a>
+    <a href="#s6"><span class="num">6</span> Consensus Engine — Votacion</a>
+    <a href="#s7"><span class="num">7</span> Patron Hot Path vs Async</a>
+    <a href="#s8"><span class="num">8</span> Profile Distributions</a>
+    <a href="#s9"><span class="num">9</span> Dual-Provider & A/B Routing</a>
+    <a href="#s10"><span class="num">10</span> Identity Drift Detection</a>
+    <a href="#s11"><span class="num">11</span> Skill Collisions & Domain Boundaries</a>
+    <a href="#s12"><span class="num">12</span> Memory Architecture</a>
+    <a href="#s13"><span class="num">13</span> Token Budget & Cost Control</a>
+    <a href="#s14"><span class="num">14</span> Logging & Traceability</a>
+    <a href="#s15"><span class="num">15</span> Git como Mecanismo de Rollback</a>
+    <a href="#s16"><span class="num">16</span> Makefile Bootstrap Pattern</a>
+    <a href="#s17"><span class="num">17</span> Checklist para Nuevo Proyecto</a>
+  </div>
+</nav>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- 1. AISLAMIENTO                                                  -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section id="s1">
+  <h2><span class="section-num">1</span> Aislamiento con HERMES_HOME</h2>
+  <p class="section-desc">Cada proyecto Hermes debe vivir aislado de tu ~/.hermes personal.</p>
+
+  <p>Hermes por defecto usa <code>~/.hermes</code> como directorio raiz. Si tienes multiples proyectos (traduccion, chatbot, investigacion), todos comparten el mismo espacio y se contaminan.</p>
+
+  <h4>La solucion: HERMES_HOME por proyecto</h4>
+<pre><code><span class="comment"># En tu Makefile</span>
+<span class="keyword">export</span> HERMES_HOME := $(CURDIR)/.hermes
+
+<span class="comment"># Todo lo que Hermes haga vive dentro del proyecto</span>
+<span class="comment"># Tu ~/.hermes personal queda intacto</span></code></pre>
+
+  <div class="callout callout-rule">
+    <strong>Regla:</strong> Siempre define <code>HERMES_HOME</code> en el Makefile del proyecto. Nunca dejes que un proyecto toque <code>~/.hermes</code>. Agrega <code>.hermes/</code> al <code>.gitignore</code>.
+  </div>
+
+  <h4>Que va en .hermes/ (runtime, gitignored)</h4>
+  <table>
+    <tr><th>Contenido</th><th>Descripcion</th></tr>
+    <tr><td><code>.env</code></td><td>API keys (ANTHROPIC_API_KEY, GLM_API_KEY)</td></tr>
+    <tr><td><code>profiles/*/</code></td><td>Copias instaladas de los profiles</td></tr>
+    <tr><td><code>state.db</code></td><td>Base de datos SQLite de memoria</td></tr>
+    <tr><td><code>sessions/</code></td><td>Estado de sesiones activas</td></tr>
+    <tr><td><code>logs/</code></td><td>Logs de runtime</td></tr>
+  </table>
+
+  <div class="callout callout-gotcha">
+    <strong>Gotcha (macOS):</strong> Si tu directorio tiene espacios en el nombre (ej: <code>Interpretation AI Cell</code>), TODOS los paths en el Makefile que pases a <code>sed</code> u otros comandos deben ir entre comillas dobles: <code>"$(CURDIR)/profiles/..."</code>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- 2. ANATOMIA DE UN PROFILE                                       -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section id="s2">
+  <h2><span class="section-num">2</span> Anatomia de un Profile</h2>
+  <p class="section-desc">Cada agente es un profile con estructura estandarizada.</p>
+
+<pre><code>profiles/mi-agente/
+  SOUL.md                <span class="comment"># Identidad (slot #1 en system prompt)</span>
+  config.yaml            <span class="comment"># Modelo, provider, kanban settings</span>
+  distribution.yaml      <span class="comment"># Manifiesto para hermes profile install</span>
+  skills/
+    skill-name/
+      SKILL.md           <span class="comment"># Procedimiento con frontmatter YAML</span>
+      (archivos auxiliares: registries, lookup tables...)
+  cron/
+    job-name.yml         <span class="comment"># Tareas programadas</span>
+  memories/              <span class="comment"># [gitignored] Memoria episodica</span>
+  sessions/              <span class="comment"># [gitignored] Estado de sesion</span>
+  state.db               <span class="comment"># [gitignored] SQLite FTS5</span></code></pre>
+
+  <h4>config.yaml minimo</h4>
+<pre><code><span class="keyword">model</span>:
+  <span class="keyword">default</span>: <span class="string">claude-sonnet-4-20250514</span>
+  <span class="keyword">provider</span>: <span class="string">anthropic</span>
+
+<span class="keyword">kanban</span>:
+  <span class="keyword">dispatch_in_gateway</span>: <span class="accent">true</span>
+  <span class="keyword">dispatch_interval_seconds</span>: <span class="accent">5</span></code></pre>
+
+  <h4>distribution.yaml minimo</h4>
+<pre><code><span class="keyword">name</span>: <span class="string">mi-agente</span>
+<span class="keyword">version</span>: <span class="string">1.0.0</span>
+<span class="keyword">description</span>: <span class="string">"Descripcion corta del agente"</span>
+<span class="keyword">hermes_requires</span>: <span class="string">">=0.12.0"</span>
+<span class="keyword">author</span>: <span class="string">"Tu Nombre"</span>
+<span class="keyword">license</span>: <span class="string">"MIT"</span>
+<span class="keyword">env_requires</span>:
+  - <span class="keyword">name</span>: <span class="string">ANTHROPIC_API_KEY</span>
+    <span class="keyword">required</span>: <span class="accent">false</span></code></pre>
+
+  <div class="callout callout-rule">
+    <strong>Regla:</strong> <code>distribution.yaml</code> es obligatorio para que <code>hermes profile install</code> funcione. Sin el, Hermes no sabe como instalar tu profile.
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- 3. SOUL.md                                                      -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section id="s3">
+  <h2><span class="section-num">3</span> SOUL.md — Identidad del Agente</h2>
+  <p class="section-desc">La constitucion del agente. Se inyecta como slot #1 en cada prompt.</p>
+
+  <p>El SOUL.md define <em>quien es</em> el agente, no <em>que hace</em> (eso lo hacen los skills). Piensa en el SOUL.md como la personalidad + valores + restricciones fundamentales.</p>
+
+  <h4>Estructura recomendada</h4>
+<pre><code><span class="comment"># Nombre del Agente — Rol en una linea</span>
+
+Parrafo de identidad: quien eres, que valoras,
+como piensas. 2-3 oraciones.
+
+<span class="comment">## Philosophical Anchor (opcional pero poderoso)</span>
+Una cita o principio que ancla la perspectiva
+unica de este agente. Esto evita identity drift.
+
+<span class="comment">## Core Directives</span>
+Lista numerada de reglas inquebrantables.
+
+<span class="comment">## Output Format</span>
+Esquema JSON exacto que el agente DEBE producir.
+Sin markdown, sin preambulo, solo JSON.
+
+<span class="comment">## Constraints</span>
+Lo que el agente NO debe hacer nunca.
+
+<span class="comment">## Domain Boundaries</span>
+Que esta FUERA del alcance de este agente.</code></pre>
+
+  <div class="callout callout-tip">
+    <strong>Patron descubierto:</strong> El <strong>Philosophical Anchor</strong> es el arma secreta contra identity drift. Un agente con un ancla filosofica clara mantiene coherencia incluso despues de cientos de invocaciones. Sin ancla, el agente tiende a "homogeneizarse" y perder su perspectiva unica.
+  </div>
+
+  <h4>7 cosas que deben estar en el SOUL.md</h4>
+  <table>
+    <tr><th>#</th><th>Elemento</th><th>Por que</th></tr>
+    <tr><td>1</td><td>Identidad en 1 parrafo</td><td>El agente necesita saber quien es antes de actuar</td></tr>
+    <tr><td>2</td><td>Ancla filosofica / perspectiva unica</td><td>Diferencia este agente de todos los demas</td></tr>
+    <tr><td>3</td><td>Output format (JSON schema)</td><td>Downstream agents necesitan parsing confiable</td></tr>
+    <tr><td>4</td><td>Verdict/decision criteria</td><td>Cuando aprueba, cuando rechaza, cuando escala</td></tr>
+    <tr><td>5</td><td>Severity definitions</td><td>minor/major/critical deben significar lo mismo entre agentes</td></tr>
+    <tr><td>6</td><td>Domain boundaries</td><td>Previene que agentes invadan el territorio de otros</td></tr>
+    <tr><td>7</td><td>Constraints (lo que NO hacer)</td><td>Evita sobre-actuacion y hallucination de problemas</td></tr>
+  </table>
+
+  <div class="callout callout-gotcha">
+    <strong>Anti-patron:</strong> No pongas instrucciones de skills dentro del SOUL.md. El SOUL define <em>quien eres</em>; los skills definen <em>que haces</em>. Mezclarlos causa confusion cuando los skills evolucionan pero el SOUL no.
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- 4. SKILLS                                                       -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section id="s4">
+  <h2><span class="section-num">4</span> Skills — Procedimientos Aprendidos</h2>
+  <p class="section-desc">Cada skill tiene frontmatter YAML que Hermes usa para decidir cuando activarlo.</p>
+
+  <h4>Estructura de un SKILL.md</h4>
+<pre><code><span class="comment">---</span>
+<span class="keyword">name</span>: <span class="string">nombre-del-skill</span>
+<span class="keyword">description</span>: <span class="string">Una linea que describe que hace</span>
+<span class="keyword">trigger</span>: <span class="string">always | condicion especifica</span>
+<span class="comment">---</span>
+
+<span class="comment"># Titulo del Skill</span>
+
+<span class="comment">## Purpose</span>
+Que problema resuelve este skill.
+
+<span class="comment">## Procedure</span>
+Pasos exactos que el agente debe seguir.
+
+<span class="comment">## Domain Boundary</span>
+Que NO cubre este skill (evita colisiones).
+
+<span class="comment">## Known Patterns / Lookup Table</span>
+Datos que el skill necesita para funcionar.
+
+<span class="comment">## Failure Modes</span>
+Que puede salir mal y como manejarlo.</code></pre>
+
+  <h4>Tipos de trigger</h4>
+  <table>
+    <tr><th>Trigger</th><th>Cuando</th><th>Ejemplo</th></tr>
+    <tr><td><code>always</code></td><td>Cada invocacion del agente</td><td>glossary-enforcement, ab-model-routing</td></tr>
+    <tr><td>Condicional</td><td>Solo cuando se detecta un patron</td><td>"idiomatic expression detected in source"</td></tr>
+    <tr><td>Cron</td><td>Programado (via cron/*.yml)</td><td>weekly-memory-audit, post-merge-audit</td></tr>
+  </table>
+
+  <h4>Patrones de skill que funcionan bien</h4>
+  <table>
+    <tr><th>Patron</th><th>Descripcion</th><th>Ejemplo</th></tr>
+    <tr><td><span class="tag tag-purple">Glossary</span></td><td>Tabla de terminos canonica que el agente debe respetar</td><td>glossary-enforcement (translator)</td></tr>
+    <tr><td><span class="tag tag-green">Router</span></td><td>Decisiones de routing basadas en hash o metadata</td><td>ab-model-routing (translator)</td></tr>
+    <tr><td><span class="tag tag-amber">Detector</span></td><td>Identifica patrones especificos y los clasifica</td><td>ambiguity-scoring (quine)</td></tr>
+    <tr><td><span class="tag tag-red">Guard</span></td><td>Previene acciones invalidas (block + log)</td><td>client_deliverable + test env = BLOCK</td></tr>
+    <tr><td><span class="tag tag-purple">Client-Specific</span></td><td>Skill dedicado a un cliente con reglas y glossario propio</td><td>example-client (translator)</td></tr>
+  </table>
+
+  <div class="callout callout-warn">
+    <strong>Leccion aprendida:</strong> Si dos skills tienen triggers que se superponen, van a colisionar. Cada skill debe tener un <strong>Domain Boundary</strong> explicito que diga: "Esto NO lo cubro yo, lo cubre el skill X." Descubrimos 3 colisiones en el proyecto por no hacer esto al principio.
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- 5. KANBAN                                                       -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section id="s5">
+  <h2><span class="section-num">5</span> Kanban — Orquestacion Multi-Agente</h2>
+  <p class="section-desc">El Kanban de Hermes es el bus de comunicacion entre agentes.</p>
+
+  <h4>Columnas del Kanban</h4>
+  <div class="diagram">
+<span class="highlight">todo</span> --> <span class="g">ready</span> --> <span class="a">in_progress</span> --> <span class="highlight">review</span> --> <span class="g">done</span>
+                                         |
+                                    <span class="a">blocked</span> --> (revision cycle, max 3 rounds)
+  </div>
+
+  <h4>Task Decomposition Pattern</h4>
+  <p>Un documento fuente se descompone en una jerarquia de tareas:</p>
+<pre><code>[PARENT] translate_document_001
+  [CHILD] segment_001 (assignee: translator)
+    [CHILD] review_001 (assignee: philosophers)
+      <span class="keyword">parents</span>=[segment_001]  <span class="comment"># Dependencia</span>
+  [CHILD] segment_002 (assignee: translator)
+    [CHILD] review_002 (assignee: philosophers)
+      <span class="keyword">parents</span>=[segment_002]
+
+<span class="comment"># Despues de completar todas las reviews:</span>
+[PARENT] audit_batch_001
+  [CHILD] diff_audit    (assignee: koehn)     <span class="keyword">parents</span>=[translate_document_001]
+  [CHILD] memory_audit  (assignee: cho)       <span class="keyword">parents</span>=[translate_document_001]
+  [CHILD] optimize      (assignee: vaswani)   <span class="keyword">parents</span>=[translate_document_001]</code></pre>
+
+  <div class="callout callout-rule">
+    <strong>Patron clave:</strong> Usa <code>parents=[...]</code> para crear grafos de dependencias. Un task de review no puede empezar hasta que el task de traduccion termine. Los tasks de auditoria no empiezan hasta que todo el documento este procesado.
+  </div>
+
+  <h4>Dispatch Intervals — Principio de cadencia</h4>
+  <table>
+    <tr><th>Capa</th><th>Intervalo</th><th>Razon</th></tr>
+    <tr><td>Core (Translator)</td><td>5s</td><td>Balance entre responsividad y carga</td></tr>
+    <tr><td>Philosophers (hot path)</td><td>3s</td><td>Necesitan responder rapido al review</td></tr>
+    <tr><td>Scientists (async)</td><td>30s</td><td>No estan en el hot path, pueden esperar</td></tr>
+  </table>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- 6. CONSENSUS ENGINE                                             -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section id="s6">
+  <h2><span class="section-num">6</span> Consensus Engine — Votacion</h2>
+  <p class="section-desc">Multiples agentes votan sobre un resultado con pesos configurables.</p>
+
+<pre><code><span class="keyword">consensus</span>:
+  <span class="keyword">strategy</span>: <span class="string">weighted</span>
+  <span class="keyword">quorum</span>: <span class="accent">3</span>              <span class="comment"># Los 3 deben votar</span>
+  <span class="keyword">threshold</span>: <span class="accent">2</span>           <span class="comment"># 2-of-3 aprueban = pasa</span>
+  <span class="keyword">max_rounds</span>: <span class="accent">3</span>          <span class="comment"># Maximo 3 rondas de revision</span>
+
+  <span class="keyword">weights</span>:               <span class="comment"># Pesos por CATEGORIA de issue</span>
+    <span class="keyword">idiom_resolution</span>:
+      wittgenstein: <span class="accent">1.5</span>  <span class="comment"># Wittgenstein manda en idiomas</span>
+      quine: <span class="accent">1.0</span>
+      frege: <span class="accent">0.8</span>
+    <span class="keyword">tone_and_style</span>:
+      frege: <span class="accent">1.5</span>          <span class="comment"># Frege manda en tono</span>
+      wittgenstein: <span class="accent">0.8</span>
+      quine: <span class="accent">0.8</span>
+    <span class="keyword">ambiguity</span>:
+      quine: <span class="accent">1.5</span>          <span class="comment"># Quine manda en ambiguedad</span>
+
+  <span class="keyword">escalation</span>:
+    <span class="keyword">after_max_rounds</span>: <span class="string">"create_task:human_review"</span>
+    <span class="keyword">on_unanimous_block</span>: <span class="string">"create_task:human_review"</span></code></pre>
+
+  <div class="callout callout-tip">
+    <strong>Insight:</strong> Los pesos deben ser <strong>por categoria de issue</strong>, no por agente globalmente. Un agente puede ser la autoridad maxima en un tema y tener poco peso en otro. Esto evita que un solo agente domine todas las decisiones.
+  </div>
+
+  <h4>Escalation chain</h4>
+  <div class="diagram">
+Ronda 1: 3 filosofos votan
+     |
+     v (si no hay consenso)
+Ronda 2: feedback al translator, re-traducir, re-votar
+     |
+     v (si no hay consenso)
+Ronda 3: ultimo intento
+     |
+     v (si falla)
+<span class="a">ESCALATION</span>: crear tarea <span class="highlight">human_review</span> en Kanban
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- 7. HOT PATH VS ASYNC                                            -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section id="s7">
+  <h2><span class="section-num">7</span> Patron Hot Path vs Async</h2>
+  <p class="section-desc">La arquitectura de dos capas es el patron mas potente que descubrimos.</p>
+
+  <table>
+    <tr><th>Dimension</th><th>Hot Path (Philosophers)</th><th>Async (Scientists)</th></tr>
+    <tr><td><strong>Cuando</strong></td><td>Cada unidad de trabajo</td><td>Post-merge o cron semanal</td></tr>
+    <tr><td><strong>Latencia</strong></td><td>&lt;30s por agente</td><td>Minutos, no importa</td></tr>
+    <tr><td><strong>Accion</strong></td><td>Approve / Revise / Block</td><td>Report + Recommend</td></tr>
+    <tr><td><strong>Modelo ideal</strong></td><td>Rapido, cost-efficient</td><td>Puede ser mas lento y potente</td></tr>
+    <tr><td><strong>Scope</strong></td><td>1 unidad de trabajo</td><td>Batch-level, cross-agent</td></tr>
+    <tr><td><strong>Polling</strong></td><td>3-5 segundos</td><td>30+ segundos</td></tr>
+  </table>
+
+  <div class="callout callout-rule">
+    <strong>Patron:</strong> Los agentes del hot path son <strong>quality gates</strong> — bloquean trabajo malo. Los agentes async son <strong>optimizadores</strong> — mejoran el sistema sin frenar el pipeline. Nunca mezcles estos roles en un solo agente.
+  </div>
+
+  <h4>Cuando agregar un agente a cada capa</h4>
+  <ul class="checklist">
+    <li><strong>Hot path:</strong> si el agente debe ver y aprobar CADA unidad de trabajo antes de que avance</li>
+    <li><strong>Async:</strong> si el agente analiza tendencias, detecta drift, o optimiza el sistema globalmente</li>
+    <li><strong>Ambos?</strong> NO. Divide en dos agentes. Un agente que hace quality gate Y optimizacion va a ser lento en el hot path y superficial en la optimizacion</li>
+  </ul>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- 8. PROFILE DISTRIBUTIONS                                        -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section id="s8">
+  <h2><span class="section-num">8</span> Profile Distributions</h2>
+  <p class="section-desc">Empaquetar agentes como directorios Git instalables.</p>
+
+  <p>Los profiles se versionan en Git como directorios con <code>distribution.yaml</code> como manifiesto. Se instalan con:</p>
+
+<pre><code>hermes profile install -y profiles/mi-agente/ --name mi-agente</code></pre>
+
+  <h4>Que va en Git vs que NO</h4>
+  <table>
+    <tr><th>En Git (version-controlled)</th><th>Per-machine (gitignored)</th></tr>
+    <tr><td>SOUL.md, config.yaml, distribution.yaml</td><td>memories/, sessions/, state.db</td></tr>
+    <tr><td>skills/*/SKILL.md + archivos auxiliares</td><td>.env (API keys)</td></tr>
+    <tr><td>cron/*.yml</td><td>logs/</td></tr>
+    <tr><td>shared/*.yml (glossary, consensus, budget)</td><td>.hermes/ (runtime completo)</td></tr>
+  </table>
+
+  <div class="callout callout-tip">
+    <strong>Tip:</strong> Configura <code>.gitattributes</code> con Git LFS para archivos <code>*.db</code>. Si alguien accidentalmente commitea un <code>state.db</code>, LFS previene que el repo se llene de binarios.
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- 9. DUAL-PROVIDER & A/B                                          -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section id="s9">
+  <h2><span class="section-num">9</span> Dual-Provider & A/B Routing</h2>
+  <p class="section-desc">Un solo proyecto, dos proveedores LLM, switch instantaneo.</p>
+
+  <h4>El patron</h4>
+<pre><code><span class="comment"># shared/environment.yml</span>
+<span class="keyword">active</span>: <span class="string">production</span>  <span class="comment"># test | production</span>
+
+<span class="keyword">test</span>:
+  <span class="keyword">provider</span>: <span class="string">z-ai</span>
+  <span class="keyword">models</span>:
+    <span class="keyword">translator</span>: <span class="string">glm-4.7-flash</span>       <span class="comment"># Gratis</span>
+    <span class="keyword">scientist</span>:  <span class="string">glm-5.1</span>            <span class="comment"># Pagado</span>
+
+<span class="keyword">production</span>:
+  <span class="keyword">provider</span>: <span class="string">anthropic</span>
+  <span class="keyword">models</span>:
+    <span class="keyword">translator</span>: <span class="string">claude-opus-4</span>       <span class="comment"># Calidad maxima</span>
+    <span class="keyword">scientist</span>:  <span class="string">claude-sonnet-4</span>    <span class="comment"># Cost-efficient</span></code></pre>
+
+  <h4>Makefile targets para switch</h4>
+<pre><code>make env-test    <span class="comment"># sed reemplaza model/provider en todos los config.yaml</span>
+make env-prod    <span class="comment"># lo mismo, pero hacia produccion</span>
+make env-status  <span class="comment"># muestra ambiente actual</span></code></pre>
+
+  <div class="callout callout-gotcha">
+    <strong>Safety guard critico:</strong> El skill de routing debe tener un <strong>environment mismatch guard</strong>: si el ambiente es <code>test</code> pero la tarea tiene <code>client_deliverable: true</code>, la tarea se BLOQUEA automaticamente. Esto previene que output de modelos baratos llegue a clientes.
+  </div>
+
+  <h4>A/B entre modelos del MISMO provider</h4>
+<pre><code><span class="comment"># Hash determinista para asignacion reproducible</span>
+cohort = SHA-256(translation_id) mod 2
+<span class="accent">0</span> => modelo primario (ej: Opus 4)
+<span class="accent">1</span> => modelo alternativo (ej: Sonnet 4)
+
+<span class="comment"># Mismo translation_id = siempre mismo modelo</span>
+<span class="comment"># ~50/50 distribucion sobre N grande</span>
+<span class="comment"># Sin dependencia de orden de llegada</span></code></pre>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- 10. IDENTITY DRIFT                                              -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section id="s10">
+  <h2><span class="section-num">10</span> Identity Drift Detection</h2>
+  <p class="section-desc">Los agentes cambian con el tiempo. Hay que detectar cuando pierden su identidad.</p>
+
+  <h4>El mecanismo</h4>
+<pre><code><span class="comment"># 1. Generar baseline (una vez)</span>
+shasum -a 256 profiles/*/SOUL.md > shared/drift_baseline.json
+
+<span class="comment"># 2. El scientist agent recomputa hashes semanalmente</span>
+<span class="comment"># 3. Si hash actual != baseline => CRITICAL alert</span>
+<span class="comment"># 4. Cambios deben ser deliberados y documentados</span></code></pre>
+
+  <h4>Clasificacion de cambios</h4>
+  <table>
+    <tr><th>Tipo</th><th>Descripcion</th><th>Accion</th></tr>
+    <tr><td><span class="tag tag-green">COSMETIC</span></td><td>Formateo, typos</td><td>Actualizar baseline</td></tr>
+    <tr><td><span class="tag tag-amber">EVOLUTION</span></td><td>Nuevas capacidades dentro de la identidad</td><td>Documentar + actualizar baseline</td></tr>
+    <tr><td><span class="tag tag-red">DRIFT</span></td><td>Contradiccion con identidad original</td><td>Revertir (git checkout)</td></tr>
+  </table>
+
+  <div class="callout callout-rule">
+    <strong>Regla:</strong> El SOUL.md baseline siempre debe leerse desde <code>profiles/&lt;agent&gt;/SOUL.md</code> (el distribution directory), NO desde <code>$HERMES_HOME/profiles/</code> (el runtime). El distribution es la fuente de verdad; el runtime puede estar desactualizado.
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- 11. SKILL COLLISIONS                                            -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section id="s11">
+  <h2><span class="section-num">11</span> Skill Collisions & Domain Boundaries</h2>
+  <p class="section-desc">El bug mas comun en multi-agente: dos skills disparando en el mismo input con consejos contradictorios.</p>
+
+  <h4>Las 3 colisiones que descubrimos</h4>
+  <table>
+    <tr><th>Colision</th><th>Skills involucrados</th><th>Solucion</th></tr>
+    <tr>
+      <td>Idiom vs Pragmatic</td>
+      <td>idiom-localization + pragmatic-context (Wittgenstein)</td>
+      <td>pragmatic-context ahora tiene clausula: "Si idiom-localization ya lo cubre, defer to it"</td>
+    </tr>
+    <tr>
+      <td>Ambiguity vs Indeterminacy</td>
+      <td>ambiguity-scoring + indeterminacy-detection (Quine)</td>
+      <td>Cada skill declara: "Este skill NO cubre X, eso lo maneja Y"</td>
+    </tr>
+    <tr>
+      <td>Tone vs Sinn/Bedeutung</td>
+      <td>tone-preservation + sinn-bedeutung (Frege)</td>
+      <td>Protocolo de euphemism overlap: tone-preservation tiene prioridad en eufemismos</td>
+    </tr>
+  </table>
+
+  <h4>Patron de Domain Boundary en SKILL.md</h4>
+<pre><code><span class="comment">## Domain Boundary</span>
+
+This skill covers: [lista de lo que SÍ cubre]
+
+This skill does NOT cover:
+- [X] — handled by `skill-name` in the same profile
+- [Y] — handled by `other-agent` profile
+
+When both this skill and `overlapping-skill` trigger on
+the same input, THIS skill defers to `overlapping-skill`
+for [specific aspect] and handles only [its own aspect].</code></pre>
+
+  <div class="callout callout-rule">
+    <strong>Regla de resolucion:</strong> Skill mas especifico gana &gt; version mas alta gana &gt; escalar a humano. Nunca resolver silenciosamente — siempre log.
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- 12. MEMORY                                                      -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section id="s12">
+  <h2><span class="section-num">12</span> Memory Architecture</h2>
+  <p class="section-desc">Hermes tiene memoria nativa con reflection automatico.</p>
+
+  <h4>Dos capas de memoria</h4>
+  <table>
+    <tr><th>Capa</th><th>Archivo</th><th>Que almacena</th><th>Indexado</th></tr>
+    <tr><td>Semantica</td><td><code>MEMORY.md</code></td><td>Patrones destilados, lecciones aprendidas</td><td>Legible por humanos</td></tr>
+    <tr><td>Episodica</td><td><code>state.db</code></td><td>Todos los mensajes, conversaciones completas</td><td>SQLite FTS5 (full-text search)</td></tr>
+  </table>
+
+  <h4>Hermes Reflection</h4>
+  <p>Hermes ejecuta pases de reflection automaticos que destilan patrones de <code>state.db</code> hacia <code>MEMORY.md</code>. Tu no escribes MEMORY.md directamente — el agente lo hace.</p>
+
+  <h4>Problemas de memoria que debes auditar</h4>
+  <ul class="checklist">
+    <li><strong>Orphaned entries:</strong> Memorias que referencian traducciones que ya no existen</li>
+    <li><strong>Stale patterns:</strong> Patrones que no se ven en las ultimas 100 invocaciones</li>
+    <li><strong>Cross-agent contradiction:</strong> Agente A aprendio "usar Sie-form" pero agente B aprendio "usar du-form"</li>
+    <li><strong>Over-generic reflections:</strong> "Las traducciones deben ser precisas" (inutil)</li>
+    <li><strong>Over-specific reflections:</strong> Memorizar una oracion exacta (overfitting)</li>
+  </ul>
+
+  <div class="callout callout-tip">
+    <strong>Patron:</strong> Dedica un scientist agent exclusivamente a auditar la memoria de todos los demas. En nuestro proyecto, Cho hace exactamente esto — cross-reference MEMORY.md contra el corpus real, detecta stale entries, y verifica coherencia cross-agent.
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- 13. TOKEN BUDGET                                                -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section id="s13">
+  <h2><span class="section-num">13</span> Token Budget & Cost Control</h2>
+  <p class="section-desc">Cada agente tiene un presupuesto de tokens. Un scientist lo monitorea.</p>
+
+<pre><code><span class="comment"># shared/token-budget.yml</span>
+<span class="keyword">agents</span>:
+  <span class="keyword">translator</span>:
+    <span class="keyword">max_tokens_per_invocation</span>: <span class="accent">4096</span>
+    <span class="keyword">max_invocations_per_hour</span>: <span class="accent">100</span>
+    <span class="keyword">tier</span>: <span class="string">opus</span>      <span class="comment"># Mas caro, calidad maxima</span>
+
+  <span class="keyword">philosopher</span>:
+    <span class="keyword">max_tokens_per_invocation</span>: <span class="accent">2048</span>
+    <span class="keyword">max_invocations_per_hour</span>: <span class="accent">100</span>
+    <span class="keyword">tier</span>: <span class="string">sonnet</span>    <span class="comment"># Mas barato, suficiente calidad</span>
+
+<span class="keyword">adjustment_rules</span>:
+  <span class="keyword">underutilized_threshold</span>: <span class="accent">0.50</span>  <span class="comment"># &lt;50% uso = reducir</span>
+  <span class="keyword">saturated_threshold</span>: <span class="accent">0.95</span>     <span class="comment"># &gt;95% uso = aumentar</span>
+  <span class="keyword">adjustment_step</span>: <span class="accent">0.15</span>         <span class="comment"># +/- 15% por ajuste</span></code></pre>
+
+  <div class="callout callout-rule">
+    <strong>Principio de tiering:</strong> Solo usa el modelo mas caro para lo que el cliente ve directamente. Todo lo demas (review, audit, optimization) puede ir en un modelo mas barato sin afectar la calidad del deliverable.
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- 14. LOGGING                                                     -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section id="s14">
+  <h2><span class="section-num">14</span> Logging & Traceability</h2>
+  <p class="section-desc">Cada "run" del pipeline genera una carpeta con el output de cada agente.</p>
+
+<pre><code>corpus/runs/2026-05-30_001/
+  manifest.yml                    <span class="comment"># Metadata del run</span>
+  source/
+    segments.json                 <span class="comment"># Texto fuente segmentado</span>
+  agents/
+    translator/output.json        <span class="comment"># Traduccion + confidence + flags</span>
+    wittgenstein/review.json      <span class="comment"># Verdict + critique</span>
+    quine/review.json
+    frege/review.json
+    koehn/audit.json              <span class="comment"># Diff audit</span>
+    cho/audit.json                <span class="comment"># Memory audit</span>
+    vaswani/audit.json            <span class="comment"># Optimization</span>
+  consensus/
+    verdict.json                  <span class="comment"># Resultado del voto ponderado</span>
+  final/
+    approved.json                 <span class="comment"># Traduccion final aprobada</span></code></pre>
+
+  <div class="callout callout-tip">
+    <strong>Patron:</strong> Usa un template directory (<code>corpus/runs/.template/</code>) con JSON schemas vacios. Un Makefile target (<code>make new-run</code>) copia el template, auto-genera <code>run_id</code> y timestamp.
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- 15. GIT COMO ROLLBACK                                           -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section id="s15">
+  <h2><span class="section-num">15</span> Git como Mecanismo de Rollback</h2>
+  <p class="section-desc">La inteligencia del agente esta en archivos. Git = rollback instantaneo.</p>
+
+<pre><code><span class="comment"># El agente Wittgenstein aprendio algo malo? Revertir:</span>
+git checkout HEAD~1 -- profiles/wittgenstein/
+hermes profile install profiles/wittgenstein/
+
+<span class="comment"># Un skill causa regresion? Revertir solo el skill:</span>
+git checkout HEAD~3 -- profiles/translator/skills/glossary-enforcement/
+hermes profile install profiles/translator/
+
+<span class="comment"># Comparar la inteligencia de un agente entre dos puntos:</span>
+git diff v1.0..v1.1 -- profiles/frege/SOUL.md
+git diff v1.0..v1.1 -- profiles/frege/skills/</code></pre>
+
+  <div class="callout callout-rule">
+    <strong>Principio:</strong> Porque SOUL + skills + config son archivos en Git, la "inteligencia" del agente tiene history completo, es diffable, y es revertible. Esto no es posible si la inteligencia vive solo en prompts en codigo o en una base de datos.
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- 16. MAKEFILE BOOTSTRAP                                          -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section id="s16">
+  <h2><span class="section-num">16</span> Makefile Bootstrap Pattern</h2>
+  <p class="section-desc">Un Makefile bien hecho hace que cualquiera pueda levantar el proyecto en 3 comandos.</p>
+
+  <h4>Targets esenciales</h4>
+  <table>
+    <tr><th>Target</th><th>Que hace</th></tr>
+    <tr><td><code>make bootstrap</code></td><td>Crea .hermes/, instala profiles, muestra next steps</td></tr>
+    <tr><td><code>make install-profiles</code></td><td>Re-instala los 7 profiles en .hermes/</td></tr>
+    <tr><td><code>make test-profiles</code></td><td>Verifica que todos los profiles estan OK</td></tr>
+    <tr><td><code>make start</code> / <code>stop</code> / <code>status</code></td><td>Control del gateway Kanban</td></tr>
+    <tr><td><code>make env-test</code> / <code>env-prod</code></td><td>Switch de ambiente (dual-provider)</td></tr>
+    <tr><td><code>make env-status</code></td><td>Muestra ambiente actual</td></tr>
+    <tr><td><code>make new-run</code></td><td>Crea directorio de run desde template</td></tr>
+    <tr><td><code>make clean</code></td><td>Borra .hermes/ (con confirmacion)</td></tr>
+  </table>
+
+  <div class="callout callout-warn">
+    <strong>Leccion macOS:</strong> <code>sed -i ''</code> (con string vacio) es la sintaxis de macOS. En Linux es <code>sed -i</code> (sin argumento extra). Si tu Makefile debe funcionar en ambos, usa una variable <code>SED_INPLACE</code>.
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- 17. CHECKLIST                                                   -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section id="s17">
+  <h2><span class="section-num">17</span> Checklist para Nuevo Proyecto Hermes</h2>
+  <p class="section-desc">Copia esta lista cuando arranques un proyecto nuevo.</p>
+
+  <h3>Fase 1: Estructura</h3>
+  <ul class="checklist">
+    <li>Crear directorio con <code>profiles/</code>, <code>shared/</code>, <code>corpus/</code>, <code>docs/</code></li>
+    <li>Crear <code>Makefile</code> con <code>HERMES_HOME := $(CURDIR)/.hermes</code></li>
+    <li>Crear <code>.gitignore</code> excluyendo <code>.hermes/</code>, <code>*.db</code>, <code>.env</code>, <code>logs/</code></li>
+    <li>Crear <code>.gitattributes</code> con LFS para <code>*.db</code></li>
+    <li>Crear <code>shared/environment.yml</code> con configuracion dual-provider</li>
+  </ul>
+
+  <h3>Fase 2: Profiles</h3>
+  <ul class="checklist">
+    <li>Para cada agente: crear directorio en <code>profiles/&lt;name&gt;/</code></li>
+    <li>Escribir <code>distribution.yaml</code> (manifiesto de instalacion)</li>
+    <li>Escribir <code>config.yaml</code> (modelo, provider, kanban interval)</li>
+    <li>Escribir <code>SOUL.md</code> con: identidad, ancla filosofica, output format, constraints, domain boundaries</li>
+    <li>Decidir: hot path (3-5s poll) vs async (30s+ poll)</li>
+  </ul>
+
+  <h3>Fase 3: Skills</h3>
+  <ul class="checklist">
+    <li>Crear <code>skills/&lt;name&gt;/SKILL.md</code> con frontmatter (name, description, trigger)</li>
+    <li>Definir domain boundaries explicitos para evitar colisiones</li>
+    <li>Agregar lookup tables / registries como archivos auxiliares</li>
+    <li>Si hay glossario: crear <code>shared/glossary.yml</code> y skill de enforcement</li>
+  </ul>
+
+  <h3>Fase 4: Orquestacion</h3>
+  <ul class="checklist">
+    <li>Definir task decomposition graph (parent/child + dependencies)</li>
+    <li>Configurar consensus engine (strategy, quorum, weights, max_rounds, escalation)</li>
+    <li>Crear <code>shared/consensus-config.yml</code></li>
+    <li>Crear <code>shared/token-budget.yml</code> con limites por agente</li>
+  </ul>
+
+  <h3>Fase 5: Scientists (Audit Layer)</h3>
+  <ul class="checklist">
+    <li>Agente de drift detection: SHA-256 baseline de SOUL.md files</li>
+    <li>Agente de memory audit: cross-reference, stale detection, coherence</li>
+    <li>Agente de optimization: token budget, skill pruning, A/B analysis</li>
+    <li>Configurar cron jobs para audits periodicos</li>
+  </ul>
+
+  <h3>Fase 6: Safety</h3>
+  <ul class="checklist">
+    <li>Infinite loop prevention: max_rounds en consensus, task timeout</li>
+    <li>Environment mismatch guard: client_deliverable + test = BLOCK</li>
+    <li>Fallback chain: modelo primario -> secundario -> queue</li>
+    <li>Context window saturation: degradacion progresiva</li>
+    <li>Human escalation: crear tarea <code>human_review</code> automaticamente</li>
+  </ul>
+
+  <h3>Fase 7: Documentacion</h3>
+  <ul class="checklist">
+    <li>Wiki en <code>docs/</code> con pages por tema (overview, architecture, profiles, workflow...)</li>
+    <li>Template de run en <code>corpus/runs/.template/</code> con JSON schemas</li>
+    <li>Makefile <code>make new-run</code> para crear runs desde template</li>
+    <li>README.md con Quick Start (3-4 comandos para levantar)</li>
+  </ul>
+</section>
+
+</div><!-- .container -->
+
+<footer>
+  <strong>Hermes Agent Architecture Playbook</strong> &middot; Compilado por Nicolas Calderon &middot; Mayo 2026<br>
+  Basado en el proyecto <em>Interpretation AI Cell</em> — Multi-agent EN&rarr;DE translation pipeline<br>
+  <span style="color: var(--purple);">Hermes Agent</span> by Nous Research &middot; Framework v0.15+
+</footer>
+
+</body>
+</html>

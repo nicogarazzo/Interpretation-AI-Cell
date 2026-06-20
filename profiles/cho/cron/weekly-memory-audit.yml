@@ -1,0 +1,38 @@
+name: weekly-memory-audit
+description: >
+  Cho's weekly audit of memory integrity and cross-agent coherence.
+  Runs every Sunday at 03:00 UTC to detect orphaned entries, stale patterns,
+  timestamp inconsistencies, and inter-agent contradictions before they
+  compound into systemic quality issues.
+
+schedule:
+  cron: "0 3 * * 0"
+  timezone: UTC
+
+tasks:
+  - id: memory-integrity
+    skill: profiles/cho/skills/memory-integrity/SKILL.md
+    description: >
+      Scan all agent MEMORY.md and state.db files for orphaned entries,
+      stale patterns, timestamp consistency violations, and entry count anomalies.
+    timeout: 300s
+    on_failure: notify
+
+  - id: cross-agent-coherence
+    skill: profiles/cho/skills/cross-agent-coherence/SKILL.md
+    depends_on: memory-integrity
+    description: >
+      Build the cross-reference matrix across all agent pairs, detect rule
+      contradictions, and recommend resolutions based on domain authority.
+    timeout: 300s
+    on_failure: notify
+
+notify:
+  channel: audit-log
+  on: failure
+  message: "Weekly memory audit failed — Cho requires manual intervention"
+
+kanban:
+  board: interpretation-cell
+  column: automated
+  label: cho-audit

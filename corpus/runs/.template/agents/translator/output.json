@@ -1,0 +1,23 @@
+{
+  "_schema": "interpretation-ai-cell/translator-output/v1",
+  "run_id": "",
+  "agent": "translator",
+  "timestamp": "",
+  "model_used": "",
+  "translations": [
+    {
+      "segment_id": "seg_001",
+      "source_text": "",
+      "target_text": "",
+      "confidence": 0.0,
+      "flags": [],
+      "glossary_applied": [],
+      "client_patterns_matched": [],
+      "register_detected": "",
+      "tokens": {
+        "prompt": 0,
+        "completion": 0
+      }
+    }
+  ]
+}
